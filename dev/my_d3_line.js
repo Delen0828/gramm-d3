@@ -10,7 +10,7 @@ const width = 800, height = 600;
         left: width * 0.1 
     };
 
-const svg = d3.select("#chart")
+const svg = d3.select("#my_d3_line_chart")
     .append("svg")
     .attr("width", width)
     .attr("height", height);

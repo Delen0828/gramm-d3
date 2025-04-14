@@ -1,5 +1,5 @@
-const x = [];
-const y = [];
+const x = ['A','B','C','D','E'];
+const y = [10.000000,25.000000,15.000000,30.000000,20.000000];
 const data = x.map((d, i) => ({ x: d, y: y[i] }));
 
 const width = 800, height = 600;
@@ -10,7 +10,7 @@ const width = 800, height = 600;
         left: width * 0.1 
     };
 
-const svg = d3.select("#chart")
+const svg = d3.select("#my_d3_bar_chart")
     .append("svg")
     .attr("width", width)
     .attr("height", height);

@@ -1,7 +1,5 @@
 # gramm-beta
 
-[![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=piermorel/gramm&project=gramm.prj&file=doc/GettingStarted.mlx)
-
 > This is a beta version of [Gramm](https://github.com/piermorel/gramm) with enhanced export capabilities using d3.js.
 
 ## Overview

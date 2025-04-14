@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D3.js Examples</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+        }
+        .example {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .code {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .chart-container {
+            margin-top: 20px;
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>D3.js Examples</h1>
+
+    <!-- Example 1: Cars Plot -->
+    <div class="example">
+        <h2>Example 1: Cars Plot</h2>
+        <div class="code">
+websave('example_data','https://github.com/piermorel/gramm/raw/master/sample_data/example_data.mat');
+load example_data;
+g=gramm('x',cars.Model_Year,'y',cars.MPG,'color',cars.Cylinders, ...
+    'subset',cars.Cylinders~=3 & cars.Cylinders~=5);
+g.stat_glm();
+g.geom_point("dodge",0.5); 
+g.draw();
+g.export_d3('file_name','github','export_path','dev/','x', 'Model_Year', 'y', 'MPG', 'title','Cars Plot');
+        </div>
+        <div class="chart-container" id="github_chart"></div>
+    </div>
+
+    <!-- Example 2: Line Plot -->
+    <div class="example">
+        <h2>Example 2: Line Plot</h2>
+        <div class="code">
+x = linspace(0, 10, 100);
+y1 = sin(x);
+x_combined = (x)';
+y_combined = (y1)';
+line_labels=[repmat({'sin(x)'}, 100, 1);];
+data = table(x_combined, y_combined, line_labels, 'VariableNames', {'x', 'y', 'line'});
+
+g = gramm('x', data.x, 'y', data.y, 'color', data.line);
+g.geom_line();
+g.axe_property('YLim', [-1.5 1.5]);
+g.set_title('Plot of sin(x)');
+g.set_names('x', 'X-Axis', 'y', 'Y-Axis', 'color', 'Function');
+g.draw();
+g.export_d3('file_name','my_d3_line','export_path','dev/','x', 'X-Axis', 'y', 'Y-Axis','title','Plot of sin(x)');
+        </div>
+        <div class="chart-container" id="my_d3_line_chart"></div>
+    </div>
+
+    <!-- Example 3: Bar Chart -->
+    <div class="example">
+        <h2>Example 3: Bar Chart</h2>
+        <div class="code">
+categories = {'A', 'B', 'C', 'D', 'E'};
+values = [10, 25, 15, 30, 20];
+bar_data = table(categories', values', 'VariableNames', {'category', 'value'});
+
+g_bar = gramm('x', bar_data.category, 'y', bar_data.value);
+g_bar.geom_bar();
+g_bar.set_title('Bar Chart Example');
+g_bar.set_names('x', 'Categories', 'y', 'Values');
+g_bar.draw();
+g_bar.export_d3('file_name','my_d3_bar','export_path','dev/','x', 'Categories', 'y', 'Values','title','Bar Chart Example');
+        </div>
+        <div class="chart-container" id="my_d3_bar_chart"></div>
+    </div>
+
+    <!-- Example 4: Jitter Plot -->
+    <div class="example">
+        <h2>Example 4: Jitter Plot</h2>
+        <div class="code">
+categories = {'A', 'B', 'C', 'D', 'E'};
+values = [];
+x_values = [];
+for i = 1:length(categories)
+    values = [values; randn(10,1) * 2 + 20];
+    x_values = [x_values; repmat(categories(i), 10, 1)];
+end
+jitter_data = table(x_values, values, 'VariableNames', {'category', 'value'});
+
+g_jitter = gramm('x', jitter_data.category, 'y', jitter_data.value);
+g_jitter.geom_jitter('width', 0.2, 'height', 0);
+g_jitter.set_title('Jitter Plot Example (Categorical)');
+g_jitter.set_names('x', 'Categories', 'y', 'Values');
+g_jitter.draw();
+g_jitter.export_d3('file_name','my_d3_jitter_categorical','export_path','dev/','x', 'Categories', 'y', 'Values','title','Jitter Plot Example (Categorical)');
+        </div>
+        <div class="chart-container" id="my_d3_jitter_categorical_chart"></div>
+    </div>
+
+    <script type="module" src="github.js"></script>
+    <script type="module" src="my_d3_line.js"></script>
+    <script type="module" src="my_d3_bar.js"></script>
+    <script type="module" src="my_d3_jitter_categorical.js"></script>
+</body>
+</html> 
