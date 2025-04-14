@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<addonCore>
+  <label>gramm</label>
+  <version>2.27.1</version>
+  <type>Toolbox</type>
+  <identifier>70a0cf59-249f-4dd6-993e-8c867a616963</identifier>
+  <description>Gramm is a powerful plotting toolbox which allows to quickly create complex, publication-quality figures in Matlab, and is inspired by R's ggplot2 library. As a reference to this inspiration, gramm stands for GRAMmar of graphics for Matlab.</description>
+  <createdBy name="Pierre Morel"/>
+  <image>resources/screenshot.png</image>
+</addonCore>
