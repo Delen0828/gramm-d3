@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gramm Vega-Lite Test Results</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; margin-bottom: 30px; }
+        h2 { color: #666; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .test-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin: 20px 0; }
+        .test-card { border: 1px solid #ddd; border-radius: 8px; padding: 20px; background: #fafafa; transition: transform 0.2s; }
+        .test-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .test-title { font-weight: bold; color: #333; margin-bottom: 10px; font-size: 16px; }
+        .test-links { margin-top: 10px; }
+        .test-links a { display: inline-block; margin-right: 10px; padding: 5px 12px; background: #007bff; color: white; text-decoration: none; border-radius: 4px; font-size: 12px; }
+        .test-links a:hover { background: #0056b3; }
+        .test-links a.json { background: #28a745; }
+        .test-links a.json:hover { background: #1e7e34; }
+        .summary { background: #e7f3ff; padding: 20px; border-radius: 8px; margin: 20px 0; }
+        .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔬 Gramm Vega-Lite Test Results</h1>
+        <div class="summary">
+            <h2>📊 Test Summary</h2>
+            <p><strong>Total Tests:</strong> 19 tests covering all geometric objects (geom_*)</p>
+            <p><strong>Generated:</strong> 2025-08-15 23:44:16</p>
+            <p><strong>Features Tested:</strong> Point plots, Line charts, Bar charts, Jitter plots, Raster plots, Swarm plots, Color grouping, Multi-layer visualizations, NaN handling, Custom parameters, Interactive legends, Click-to-filter functionality</p>
+        </div>
+        <h2>🎯 Interactive Test Results</h2>
+        <div class="test-grid">
+            <div class="test-card">
+                <div class="test-title">Test 1: Basic Scatter Plot</div>
+                <p>Tests basic scatter plot functionality with random data points.</p>
+                <div class="test-links">
+                    <a href="test_geom_point.html" target="_blank">📈 View Chart</a>
+                    <a href="test_geom_point.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 2: Scatter Plot with Color Groups</div>
+                <p>Tests scatter plots with color grouping and legend.</p>
+                <div class="test-links">
+                    <a href="test_geom_point_colors.html" target="_blank">📈 View Chart</a>
+                    <a href="test_geom_point_colors.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 3: Basic Line Chart</div>
+                <p>Tests basic line chart with continuous data.</p>
+                <div class="test-links">
+                    <a href="test_geom_line.html" target="_blank">📈 View Chart</a>
+                    <a href="test_geom_line.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 4: Multi-Series Line Chart</div>
+                <p>Tests multi-series line charts with color grouping.</p>
+                <div class="test-links">
+                    <a href="test_geom_line_multi.html" target="_blank">📈 View Chart</a>
+                    <a href="test_geom_line_multi.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 5: Categorical Bar Chart</div>
+                <p>Tests bar charts with categorical x-axis data.</p>
+                <div class="test-links">
+                    <a href="test_geom_bar_categorical.html" target="_blank">📈 View Chart</a>
+                    <a href="test_geom_bar_categorical.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 6: Grouped Bar Chart</div>
+                <p>Tests grouped bar charts with numeric data and color groups.</p>
+                <div class="test-links">
+                    <a href="test_geom_bar_groups.html" target="_blank">📈 View Chart</a>
+                    <a href="test_geom_bar_groups.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 7: Jittered Points</div>
+                <p>Tests jittered points for categorical data visualization.</p>
+                <div class="test-links">
+                    <a href="test_geom_jitter.html" target="_blank">📈 View Chart</a>
+                    <a href="test_geom_jitter.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 8: Strip Plot (Raster)</div>
+                <p>Tests strip plots (raster) for distribution visualization.</p>
+                <div class="test-links">
+                    <a href="test_geom_raster.html" target="_blank">📈 View Chart</a>
+                    <a href="test_geom_raster.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 9: Combined Point and Line</div>
+                <p>Tests multi-layer visualization combining points and lines.</p>
+                <div class="test-links">
+                    <a href="test_combined_point_line.html" target="_blank">📈 View Chart</a>
+                    <a href="test_combined_point_line.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 10: NaN Value Handling</div>
+                <p>Tests proper handling of NaN values in datasets.</p>
+                <div class="test-links">
+                    <a href="test_nan_handling.html" target="_blank">📈 View Chart</a>
+                    <a href="test_nan_handling.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 11: Custom Export Parameters</div>
+                <p>Tests custom export parameters (title, labels, dimensions).</p>
+                <div class="test-links">
+                    <a href="test_custom_params.html" target="_blank">📈 View Chart</a>
+                    <a href="test_custom_params.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 12: Beeswarm Plot</div>
+                <p>Tests beeswarm plots for grouped data distribution.</p>
+                <div class="test-links">
+                    <a href="test_geom_swarm.html" target="_blank">📈 View Chart</a>
+                    <a href="test_geom_swarm.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 13: Interactive Scatter Plot</div>
+                <p>Interactive scatter plot with clickable legend for filtering data points by group.</p>
+                <div class="test-links">
+                    <a href="test_interactive_scatter.html" target="_blank">📈 View Chart</a>
+                    <a href="test_interactive_scatter.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 14: Interactive Multi-Series Lines</div>
+                <p>Multi-series line chart with interactive legend for highlighting/hiding specific series.</p>
+                <div class="test-links">
+                    <a href="test_interactive_lines.html" target="_blank">📈 View Chart</a>
+                    <a href="test_interactive_lines.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 15: Interactive Grouped Bars</div>
+                <p>Grouped bar chart with interactive legend controlling visibility of different divisions.</p>
+                <div class="test-links">
+                    <a href="test_interactive_bars.html" target="_blank">📈 View Chart</a>
+                    <a href="test_interactive_bars.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 16: Interactive Jitter Plot</div>
+                <p>Interactive jitter plot with legend-based filtering by treatment groups.</p>
+                <div class="test-links">
+                    <a href="test_interactive_jitter.html" target="_blank">📈 View Chart</a>
+                    <a href="test_interactive_jitter.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 17: Standard Legend (Non-Interactive)</div>
+                <p>Standard non-interactive legend for comparison with interactive version.</p>
+                <div class="test-links">
+                    <a href="test_standard_legend.html" target="_blank">📈 View Chart</a>
+                    <a href="test_standard_legend.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 18: Interactive Legend Demo</div>
+                <p>Interactive legend demo showing click-to-filter and Shift+Click multi-select functionality.</p>
+                <div class="test-links">
+                    <a href="test_interactive_legend.html" target="_blank">📈 View Chart</a>
+                    <a href="test_interactive_legend.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+            <div class="test-card">
+                <div class="test-title">Test 19: Large Dataset Interactive Test</div>
+                <p>Performance test with 500 data points and interactive legend filtering.</p>
+                <div class="test-links">
+                    <a href="test_large_interactive.html" target="_blank">📈 View Chart</a>
+                    <a href="test_large_interactive.json" class="json" target="_blank">📄 JSON Spec</a>
+                </div>
+            </div>
+        </div>
+        <div class="summary">
+            <h2>🔍 Validation Instructions</h2>
+            <ol>
+                <li><strong>View Charts:</strong> Click "📈 View Chart" to see interactive Vega-Lite visualizations</li>
+                <li><strong>Check JSON:</strong> Click "📄 JSON Spec" to view Vega-Lite specifications</li>
+                <li><strong>Verify Features:</strong> Test tooltips, zoom, pan, and color groupings</li>
+                <li><strong>Compare Accuracy:</strong> Ensure charts match original gramm plots</li>
+            </ol>
+        </div>
+        <div class="footer">
+            <p>Generated by Gramm Vega-Lite Export Test Suite | <a href="https://github.com/piermorel/gramm">Gramm</a> + <a href="https://vega.github.io/vega-lite/">Vega-Lite</a></p>
+        </div>
+    </div>
+</body>
+</html>
