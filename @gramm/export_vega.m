@@ -177,9 +177,25 @@ function stats = detectStatHandles(results)
                   'stat_boxplot_handle', 'stat_summary_handle', 'stat_bin2d_handle', ...
                   'stat_ellipse_handle', 'stat_qq_handle', 'stat_cornerhist_handle'};
     
+    % Check for _handle versions first
     for i = 1:length(stat_types)
         if isfield(results, stat_types{i})
             stats.(stat_types{i}) = results.(stat_types{i});
+        end
+    end
+    
+    % Also check for direct field names (without _handle suffix) in results
+    stat_types_direct = {'stat_glm', 'stat_smooth', 'stat_fit', ...
+                        'stat_bin', 'stat_density', 'stat_violin', ...
+                        'stat_boxplot', 'stat_summary', 'stat_bin2d', ...
+                        'stat_ellipse', 'stat_qq', 'stat_cornerhist'};
+    
+    for i = 1:length(stat_types_direct)
+        if isfield(results, stat_types_direct{i}) && ~isempty(results.(stat_types_direct{i}))
+            handle_name = [stat_types_direct{i} '_handle'];
+            if ~isfield(stats, handle_name)  % Don't overwrite if _handle version already exists
+                stats.(handle_name) = results.(stat_types_direct{i});
+            end
         end
     end
 end
@@ -230,6 +246,13 @@ function chart_spec = detectAllChartTypes(analysis)
         geom_fields = fieldnames(analysis.geoms);
     end
     
+    % Get stat field names and handle empty case
+    if isempty(analysis.stats) || ~isstruct(analysis.stats)
+        stat_fields = {};
+    else
+        stat_fields = fieldnames(analysis.stats);
+    end
+    
     % Process each geom type
     for i = 1:length(geom_fields)
         geom_type = geom_fields{i};
@@ -259,10 +282,41 @@ function chart_spec = detectAllChartTypes(analysis)
         end
     end
     
-    % If no geom detected, default to point
+    % Process each stat type
+    for i = 1:length(stat_fields)
+        stat_type = stat_fields{i};
+        switch stat_type
+            case 'stat_glm_handle'
+                chart_spec.layers{end+1} = createStatGlmLayer(analysis);
+            case 'stat_smooth_handle'
+                chart_spec.layers{end+1} = createStatSmoothLayer(analysis);
+            case 'stat_bin_handle'
+                chart_spec.layers{end+1} = createStatBinLayer(analysis);
+            case 'stat_summary_handle'
+                chart_spec.layers{end+1} = createStatSummaryLayer(analysis);
+            case 'stat_density_handle'
+                chart_spec.layers{end+1} = createStatDensityLayer(analysis);
+            case 'stat_violin_handle'
+                chart_spec.layers{end+1} = createStatViolinLayer(analysis);
+            case 'stat_boxplot_handle'
+                chart_spec.layers{end+1} = createStatBoxplotLayer(analysis);
+            case 'stat_qq_handle'
+                chart_spec.layers{end+1} = createStatQqLayer(analysis);
+            case 'stat_fit_handle'
+                chart_spec.layers{end+1} = createStatFitLayer(analysis);
+            case 'stat_bin2d_handle'
+                chart_spec.layers{end+1} = createStatBin2dLayer(analysis);
+            case 'stat_ellipse_handle'
+                chart_spec.layers{end+1} = createStatEllipseLayer(analysis);
+            case 'stat_cornerhist_handle'
+                chart_spec.layers{end+1} = createStatCornerhist(analysis);
+        end
+    end
+    
+    % If no geom or stat detected, default to point
     if isempty(chart_spec.layers)
         chart_spec.layers{1} = createPointLayer(analysis);
-        disp('No geom type detected, defaulting to point chart');
+        disp('No geom or stat type detected, defaulting to point chart');
     end
 end
 
@@ -763,6 +817,833 @@ function layer = createPolygonLayer(analysis)
     layer.vegaSpec.marks = {marks};
 end
 
+%% ===== STATISTICAL TRANSFORMATION IMPLEMENTATIONS =====
+
+function layer = createStatGlmLayer(analysis)
+    layer = struct();
+    layer.isVegaChart = true;
+    
+    % Create Vega specification for GLM fits with confidence intervals
+    layer.vegaSpec = createBaseVegaSpec();
+    
+    % Create two data sources like working example
+    % 1. Points data (raw data)
+    points_data = struct();
+    points_data.name = 'points';
+    points_data.values = extractVegaData(analysis);  % Use existing function
+    
+    % 2. Regression data (references points with transform)
+    regression_data = struct();
+    regression_data.name = 'regression';
+    regression_data.source = 'points';  % Key: reference the points data
+    
+    % Add regression transform
+    reg_transform = struct();
+    reg_transform.type = 'regression';
+    reg_transform.method = 'linear';
+    reg_transform.x = 'x';
+    reg_transform.y = 'y';
+    reg_transform.as = {'reg_x', 'reg_y'};
+    
+    % Add groupby if color grouping exists  
+    if analysis.grouping.hasColorGroup
+        reg_transform.groupby = {'color'};
+    end
+    
+    regression_data.transform = {reg_transform};
+    
+    % Set both data sources
+    layer.vegaSpec.data = {points_data, regression_data};
+    
+    % Add scales (reference points data for domain)
+    layer.vegaSpec.scales = createVegaScales(analysis, false, 'points');
+    
+    % Add axes
+    layer.vegaSpec.axes = createVegaAxes(analysis);
+    
+    % Create marks for both points and regression line
+    marks = {};
+    
+    % 1. Symbol marks for data points
+    symbol_marks = struct();
+    symbol_marks.type = 'symbol';
+    symbol_marks.from = struct('data', 'points');
+    symbol_marks.encode = struct();
+    symbol_marks.encode.enter = struct();
+    symbol_marks.encode.enter.x = struct('scale', 'xscale', 'field', 'x');
+    symbol_marks.encode.enter.y = struct('scale', 'yscale', 'field', 'y');
+    symbol_marks.encode.enter.size = struct('value', 50);
+    
+    % Set symbol color
+    if analysis.grouping.hasColorGroup
+        symbol_marks.encode.enter.fill = struct('scale', 'color', 'field', 'color');
+    else
+        symbol_marks.encode.enter.fill = struct('value', 'steelblue');
+    end
+    
+    marks{1} = symbol_marks;
+    
+    % 2. Line marks for regression
+    if analysis.grouping.hasColorGroup
+        % Use faceted group approach for multi-color regression (like working example)
+        group_marks = struct();
+        group_marks.type = 'group';
+        group_marks.from = struct();
+        group_marks.from.facet = struct();
+        group_marks.from.facet.name = 'facet_lines';
+        group_marks.from.facet.data = 'regression';
+        group_marks.from.facet.groupby = 'color';
+        
+        % Create inner line mark
+        inner_line = struct();
+        inner_line.type = 'line';
+        inner_line.from = struct('data', 'facet_lines');
+        inner_line.encode = struct();
+        inner_line.encode.enter = struct();
+        inner_line.encode.enter.x = struct('scale', 'xscale', 'field', 'reg_x');
+        inner_line.encode.enter.y = struct('scale', 'yscale', 'field', 'reg_y');
+        inner_line.encode.enter.strokeWidth = struct('value', 2);
+        inner_line.encode.enter.stroke = struct('scale', 'color', 'field', 'color');
+        
+        group_marks.marks = {inner_line};
+        marks{2} = group_marks;
+    else
+        % Use simple line approach for single-color regression
+        line_marks = struct();
+        line_marks.type = 'line';
+        line_marks.from = struct('data', 'regression');
+        line_marks.encode = struct();
+        line_marks.encode.enter = struct();
+        line_marks.encode.enter.x = struct('scale', 'xscale', 'field', 'reg_x');
+        line_marks.encode.enter.y = struct('scale', 'yscale', 'field', 'reg_y');
+        line_marks.encode.enter.strokeWidth = struct('value', 2);
+        line_marks.encode.enter.stroke = struct('value', '#ff4565');
+        
+        marks{2} = line_marks;
+    end
+    
+    layer.vegaSpec.marks = marks;
+end
+
+function layer = createStatSmoothLayer(analysis)
+    layer = struct();
+    layer.isVegaChart = true;
+    
+    % Create Vega specification for smoothed estimates using LOESS
+    layer.vegaSpec = createBaseVegaSpec();
+    
+    % Add scales
+    layer.vegaSpec.scales = createVegaScales(analysis);
+    
+    % Add axes
+    layer.vegaSpec.axes = createVegaAxes(analysis);
+    
+    % Add LOESS smoothing transform
+    if analysis.grouping.hasColorGroup
+        % Group by color for separate smoothing
+        loess_transform = struct();
+        loess_transform.type = 'loess';
+        loess_transform.groupby = {'color'};
+        loess_transform.x = 'x';
+        loess_transform.y = 'y';
+        loess_transform.bandwidth = 0.3;  % Default bandwidth
+        loess_transform.as = {'smooth_x', 'smooth_y'};
+        
+        layer.vegaSpec.data{1}.transform = {loess_transform};
+        
+        % Create marks for smooth lines
+        line_marks = struct();
+        line_marks.name = 'smooth_lines';
+        line_marks.type = 'line';
+        line_marks.from = struct('data', 'table');
+        line_marks.encode = struct();
+        line_marks.encode.enter = struct();
+        line_marks.encode.enter.x = struct('scale', 'xscale', 'field', 'smooth_x');
+        line_marks.encode.enter.y = struct('scale', 'yscale', 'field', 'smooth_y');
+        line_marks.encode.enter.strokeWidth = struct('value', 3);
+        line_marks.encode.enter.stroke = struct('scale', 'color', 'field', 'color');
+        
+        layer.vegaSpec.marks = {line_marks};
+    else
+        % Single smooth line
+        loess_transform = struct();
+        loess_transform.type = 'loess';
+        loess_transform.x = 'x';
+        loess_transform.y = 'y';
+        loess_transform.bandwidth = 0.3;
+        loess_transform.as = {'smooth_x', 'smooth_y'};
+        
+        layer.vegaSpec.data{1}.transform = {loess_transform};
+        
+        % Create marks for smooth line
+        line_marks = struct();
+        line_marks.name = 'smooth_line';
+        line_marks.type = 'line';
+        line_marks.from = struct('data', 'table');
+        line_marks.encode = struct();
+        line_marks.encode.enter = struct();
+        line_marks.encode.enter.x = struct('scale', 'xscale', 'field', 'smooth_x');
+        line_marks.encode.enter.y = struct('scale', 'yscale', 'field', 'smooth_y');
+        line_marks.encode.enter.strokeWidth = struct('value', 3);
+        line_marks.encode.enter.stroke = struct('value', '#ff4565');
+        
+        layer.vegaSpec.marks = {line_marks};
+    end
+end
+
+function layer = createStatBinLayer(analysis)
+    layer = struct();
+    layer.isVegaChart = true;
+    
+    % Create Vega specification for histograms
+    layer.vegaSpec = createBaseVegaSpec();
+    
+    % Create scales for histogram
+    scales = {};
+    
+    % X scale for bins
+    xscale = struct();
+    xscale.name = 'xscale';
+    xscale.type = 'linear';
+    xscale.domain = struct('data', 'binned', 'field', 'x0');
+    xscale.range = 'width';
+    scales{end+1} = xscale;
+    
+    % Y scale for counts
+    yscale = struct();
+    yscale.name = 'yscale';
+    yscale.type = 'linear';
+    yscale.domain = struct('data', 'binned', 'field', 'count');
+    yscale.range = 'height';
+    yscale.nice = true;
+    yscale.zero = true;
+    scales{end+1} = yscale;
+    
+    % Color scale if grouping exists
+    if analysis.grouping.hasColorGroup
+        colorscale = struct();
+        colorscale.name = 'color';
+        colorscale.type = 'ordinal';
+        colorscale.domain = struct('data', 'binned', 'field', 'color');
+        colorscale.range = {'#fc4464', '#08bc4d', '#04b0fc', '#ff9500', '#9b59b6', '#e74c3c', '#2ecc71', '#3498db'};
+        scales{end+1} = colorscale;
+    end
+    
+    layer.vegaSpec.scales = scales;
+    
+    % Add axes
+    layer.vegaSpec.axes = {
+        struct('orient', 'bottom', 'scale', 'xscale', 'title', 'x-axis');
+        struct('orient', 'left', 'scale', 'yscale', 'title', 'Count')
+    };
+    
+    % Add binning transform and create new data source
+    binned_data = struct();
+    binned_data.name = 'binned';
+    binned_data.source = 'table';
+    binned_data.transform = {};
+    
+    if analysis.grouping.hasColorGroup
+        % Bin with grouping
+        bin_transform = struct();
+        bin_transform.type = 'bin';
+        bin_transform.field = 'x';
+        bin_transform.extent = struct('signal', 'extent(data(''table''), ''x'')');
+        bin_transform.maxbins = 30;
+        bin_transform.as = {'x0', 'x1'};
+        
+        aggregate_transform = struct();
+        aggregate_transform.type = 'aggregate';
+        aggregate_transform.groupby = {'x0', 'x1', 'color'};
+        aggregate_transform.fields = {};
+        aggregate_transform.ops = {'count'};
+        aggregate_transform.as = {'count'};
+        
+        binned_data.transform = {bin_transform, aggregate_transform};
+    else
+        % Simple binning
+        bin_transform = struct();
+        bin_transform.type = 'bin';
+        bin_transform.field = 'x';
+        bin_transform.maxbins = 30;
+        bin_transform.as = {'x0', 'x1'};
+        
+        aggregate_transform = struct();
+        aggregate_transform.type = 'aggregate';
+        aggregate_transform.groupby = {'x0', 'x1'};
+        aggregate_transform.fields = {};
+        aggregate_transform.ops = {'count'};
+        aggregate_transform.as = {'count'};
+        
+        binned_data.transform = {bin_transform, aggregate_transform};
+    end
+    
+    layer.vegaSpec.data = {struct('name', 'table'), binned_data};
+    
+    % Create histogram marks
+    if analysis.grouping.hasColorGroup
+        % Grouped/stacked bars
+        marks = struct();
+        marks.name = 'bars';
+        marks.type = 'rect';
+        marks.from = struct('data', 'binned');
+        
+        marks.encode = struct();
+        marks.encode.enter = struct();
+        marks.encode.enter.x = struct('scale', 'xscale', 'field', 'x0');
+        marks.encode.enter.x2 = struct('scale', 'xscale', 'field', 'x1');
+        marks.encode.enter.y = struct('scale', 'yscale', 'field', 'count');
+        marks.encode.enter.y2 = struct('scale', 'yscale', 'value', 0);
+        marks.encode.enter.fill = struct('scale', 'color', 'field', 'color');
+        
+        layer.vegaSpec.marks = {marks};
+    else
+        % Simple bars
+        marks = struct();
+        marks.name = 'bars';
+        marks.type = 'rect';
+        marks.from = struct('data', 'binned');
+        
+        marks.encode = struct();
+        marks.encode.enter = struct();
+        marks.encode.enter.x = struct('scale', 'xscale', 'field', 'x0');
+        marks.encode.enter.x2 = struct('scale', 'xscale', 'field', 'x1');
+        marks.encode.enter.y = struct('scale', 'yscale', 'field', 'count');
+        marks.encode.enter.y2 = struct('scale', 'yscale', 'value', 0);
+        marks.encode.enter.fill = struct('value', '#ff4565');
+        
+        layer.vegaSpec.marks = {marks};
+    end
+end
+
+function layer = createStatSummaryLayer(analysis)
+    layer = struct();
+    layer.isVegaChart = true;
+    
+    % Create Vega specification for statistical summaries with error bars
+    layer.vegaSpec = createBaseVegaSpec();
+    
+    % Add scales
+    layer.vegaSpec.scales = createVegaScales(analysis);
+    
+    % Add axes
+    layer.vegaSpec.axes = createVegaAxes(analysis);
+    
+    % Add summary transform
+    summary_data = struct();
+    summary_data.name = 'summary';
+    summary_data.source = 'table';
+    
+    if analysis.grouping.hasColorGroup
+        % Group by x and color
+        summary_transform = struct();
+        summary_transform.type = 'aggregate';
+        summary_transform.groupby = {'x', 'color'};
+        summary_transform.fields = {'y', 'y', 'y'};
+        summary_transform.ops = {'mean', 'stdev', 'count'};
+        summary_transform.as = {'mean_y', 'stdev_y', 'count_y'};
+        
+        summary_data.transform = {summary_transform};
+        
+        % Calculate confidence intervals
+        ci_transform = struct();
+        ci_transform.type = 'formula';
+        ci_transform.expr = 'datum.mean_y - 1.96 * datum.stdev_y / sqrt(datum.count_y)';
+        ci_transform.as = 'ci_lower';
+        
+        ci_transform2 = struct();
+        ci_transform2.type = 'formula';
+        ci_transform2.expr = 'datum.mean_y + 1.96 * datum.stdev_y / sqrt(datum.count_y)';
+        ci_transform2.as = 'ci_upper';
+        
+        summary_data.transform = {summary_transform, ci_transform, ci_transform2};
+    else
+        % Simple summary
+        summary_transform = struct();
+        summary_transform.type = 'aggregate';
+        summary_transform.groupby = {'x'};
+        summary_transform.fields = {'y', 'y', 'y'};
+        summary_transform.ops = {'mean', 'stdev', 'count'};
+        summary_transform.as = {'mean_y', 'stdev_y', 'count_y'};
+        
+        % Calculate confidence intervals
+        ci_transform = struct();
+        ci_transform.type = 'formula';
+        ci_transform.expr = 'datum.mean_y - 1.96 * datum.stdev_y / sqrt(datum.count_y)';
+        ci_transform.as = 'ci_lower';
+        
+        ci_transform2 = struct();
+        ci_transform2.type = 'formula';
+        ci_transform2.expr = 'datum.mean_y + 1.96 * datum.stdev_y / sqrt(datum.count_y)';
+        ci_transform2.as = 'ci_upper';
+        
+        summary_data.transform = {summary_transform, ci_transform, ci_transform2};
+    end
+    
+    layer.vegaSpec.data = {struct('name', 'table'), summary_data};
+    
+    % Create marks for means (points) and error bars
+    marks = {};
+    
+    % Error bars
+    error_marks = struct();
+    error_marks.name = 'errorbars';
+    error_marks.type = 'rule';
+    error_marks.from = struct('data', 'summary');
+    error_marks.encode = struct();
+    error_marks.encode.enter = struct();
+    error_marks.encode.enter.x = struct('scale', 'xscale', 'field', 'x');
+    error_marks.encode.enter.y = struct('scale', 'yscale', 'field', 'ci_lower');
+    error_marks.encode.enter.y2 = struct('scale', 'yscale', 'field', 'ci_upper');
+    error_marks.encode.enter.strokeWidth = struct('value', 2);
+    
+    % Mean points
+    point_marks = struct();
+    point_marks.name = 'means';
+    point_marks.type = 'symbol';
+    point_marks.from = struct('data', 'summary');
+    point_marks.encode = struct();
+    point_marks.encode.enter = struct();
+    point_marks.encode.enter.x = struct('scale', 'xscale', 'field', 'x');
+    point_marks.encode.enter.y = struct('scale', 'yscale', 'field', 'mean_y');
+    point_marks.encode.enter.size = struct('value', 100);
+    point_marks.encode.enter.stroke = struct('value', 'white');
+    point_marks.encode.enter.strokeWidth = struct('value', 2);
+    
+    if analysis.grouping.hasColorGroup
+        error_marks.encode.enter.stroke = struct('scale', 'color', 'field', 'color');
+        point_marks.encode.enter.fill = struct('scale', 'color', 'field', 'color');
+    else
+        error_marks.encode.enter.stroke = struct('value', '#ff4565');
+        point_marks.encode.enter.fill = struct('value', '#ff4565');
+    end
+    
+    layer.vegaSpec.marks = {error_marks, point_marks};
+end
+
+function layer = createStatDensityLayer(analysis)
+    layer = struct();
+    layer.isVegaChart = true;
+    
+    % Create Vega specification for kernel density estimation
+    layer.vegaSpec = createBaseVegaSpec();
+    
+    % Add scales
+    layer.vegaSpec.scales = createVegaScales(analysis);
+    
+    % Add axes
+    layer.vegaSpec.axes = createVegaAxes(analysis);
+    
+    % Add density transform
+    density_data = struct();
+    density_data.name = 'density';
+    density_data.source = 'table';
+    
+    if analysis.grouping.hasColorGroup
+        % Group by color for separate densities
+        density_transform = struct();
+        density_transform.type = 'kde';
+        density_transform.field = 'x';
+        density_transform.groupby = {'color'};
+        density_transform.bandwidth = 0.4;  % Default bandwidth
+        density_transform.extent = struct('signal', 'extent(data(''table''), ''x'')');
+        density_transform.as = {'value', 'density'};
+        
+        density_data.transform = {density_transform};
+    else
+        % Single density
+        density_transform = struct();
+        density_transform.type = 'kde';
+        density_transform.field = 'x';
+        density_transform.bandwidth = 0.4;
+        density_transform.extent = struct('signal', 'extent(data(''table''), ''x'')');
+        density_transform.as = {'value', 'density'};
+        
+        density_data.transform = {density_transform};
+    end
+    
+    layer.vegaSpec.data = {struct('name', 'table'), density_data};
+    
+    % Create area marks for density curves
+    marks = struct();
+    marks.name = 'density_curves';
+    marks.type = 'area';
+    marks.from = struct('data', 'density');
+    
+    marks.encode = struct();
+    marks.encode.enter = struct();
+    marks.encode.enter.x = struct('scale', 'xscale', 'field', 'value');
+    marks.encode.enter.y = struct('scale', 'yscale', 'field', 'density');
+    marks.encode.enter.y2 = struct('scale', 'yscale', 'value', 0);
+    marks.encode.enter.fillOpacity = struct('value', 0.7);
+    
+    if analysis.grouping.hasColorGroup
+        marks.encode.enter.fill = struct('scale', 'color', 'field', 'color');
+    else
+        marks.encode.enter.fill = struct('value', '#ff4565');
+    end
+    
+    layer.vegaSpec.marks = {marks};
+end
+
+function layer = createStatViolinLayer(analysis)
+    layer = struct();
+    layer.isVegaChart = true;
+    
+    % Create Vega specification for violin plots (simplified)
+    layer.vegaSpec = createBaseVegaSpec();
+    
+    % For now, create a simplified violin using density + boxplot approach
+    % In a full implementation, this would use more complex transforms
+    
+    % Add scales
+    layer.vegaSpec.scales = createVegaScales(analysis);
+    
+    % Add axes
+    layer.vegaSpec.axes = createVegaAxes(analysis);
+    
+    % Create violin approximation using area marks
+    marks = struct();
+    marks.name = 'violin_approximation';
+    marks.type = 'rect';
+    marks.from = struct('data', 'table');
+    
+    marks.encode = struct();
+    marks.encode.enter = struct();
+    marks.encode.enter.x = struct('scale', 'xscale', 'field', 'x');
+    marks.encode.enter.width = struct('value', 40);
+    marks.encode.enter.y = struct('scale', 'yscale', 'field', 'y');
+    marks.encode.enter.height = struct('value', 3);
+    marks.encode.enter.fillOpacity = struct('value', 0.6);
+    
+    if analysis.grouping.hasColorGroup
+        marks.encode.enter.fill = struct('scale', 'color', 'field', 'color');
+    else
+        marks.encode.enter.fill = struct('value', '#ff4565');
+    end
+    
+    layer.vegaSpec.marks = {marks};
+end
+
+function layer = createStatBoxplotLayer(analysis)
+    layer = struct();
+    layer.isVegaChart = true;
+    
+    % Create Vega specification for box plots
+    layer.vegaSpec = createBaseVegaSpec();
+    
+    % Add scales
+    layer.vegaSpec.scales = createVegaScales(analysis);
+    
+    % Add axes
+    layer.vegaSpec.axes = createVegaAxes(analysis);
+    
+    % Add boxplot transform
+    boxplot_data = struct();
+    boxplot_data.name = 'boxplot';
+    boxplot_data.source = 'table';
+    
+    if analysis.grouping.hasColorGroup
+        % Group by x and color
+        boxplot_transform = struct();
+        boxplot_transform.type = 'aggregate';
+        boxplot_transform.groupby = {'x', 'color'};
+        boxplot_transform.fields = {'y', 'y', 'y', 'y', 'y'};
+        boxplot_transform.ops = {'q1', 'median', 'q3', 'min', 'max'};
+        boxplot_transform.as = {'q1', 'median', 'q3', 'min', 'max'};
+        
+        boxplot_data.transform = {boxplot_transform};
+    else
+        % Simple boxplot
+        boxplot_transform = struct();
+        boxplot_transform.type = 'aggregate';
+        boxplot_transform.groupby = {'x'};
+        boxplot_transform.fields = {'y', 'y', 'y', 'y', 'y'};
+        boxplot_transform.ops = {'q1', 'median', 'q3', 'min', 'max'};
+        boxplot_transform.as = {'q1', 'median', 'q3', 'min', 'max'};
+        
+        boxplot_data.transform = {boxplot_transform};
+    end
+    
+    layer.vegaSpec.data = {struct('name', 'table'), boxplot_data};
+    
+    % Create box marks (simplified implementation)
+    box_marks = struct();
+    box_marks.name = 'boxes';
+    box_marks.type = 'rect';
+    box_marks.from = struct('data', 'boxplot');
+    
+    box_marks.encode = struct();
+    box_marks.encode.enter = struct();
+    box_marks.encode.enter.x = struct('scale', 'xscale', 'field', 'x');
+    box_marks.encode.enter.width = struct('value', 40);
+    box_marks.encode.enter.y = struct('scale', 'yscale', 'field', 'q1');
+    box_marks.encode.enter.y2 = struct('scale', 'yscale', 'field', 'q3');
+    box_marks.encode.enter.stroke = struct('value', 'black');
+    box_marks.encode.enter.strokeWidth = struct('value', 1);
+    
+    if analysis.grouping.hasColorGroup
+        box_marks.encode.enter.fill = struct('scale', 'color', 'field', 'color');
+    else
+        box_marks.encode.enter.fill = struct('value', '#ff4565');
+    end
+    
+    layer.vegaSpec.marks = {box_marks};
+end
+
+function layer = createStatQqLayer(analysis)
+    layer = struct();
+    layer.isVegaChart = true;
+    
+    % Create Vega specification for Q-Q plots
+    layer.vegaSpec = createBaseVegaSpec();
+    
+    % Add scales
+    layer.vegaSpec.scales = createVegaScales(analysis);
+    
+    % Add axes
+    layer.vegaSpec.axes = createVegaAxes(analysis);
+    
+    % Create Q-Q plot marks (simplified implementation)
+    marks = struct();
+    marks.name = 'qq_points';
+    marks.type = 'symbol';
+    marks.from = struct('data', 'table');
+    
+    marks.encode = struct();
+    marks.encode.enter = struct();
+    marks.encode.enter.x = struct('scale', 'xscale', 'field', 'x');
+    marks.encode.enter.y = struct('scale', 'yscale', 'field', 'y');
+    marks.encode.enter.size = struct('value', 60);
+    marks.encode.enter.stroke = struct('value', 'white');
+    marks.encode.enter.strokeWidth = struct('value', 1);
+    
+    if analysis.grouping.hasColorGroup
+        marks.encode.enter.fill = struct('scale', 'color', 'field', 'color');
+    else
+        marks.encode.enter.fill = struct('value', '#ff4565');
+    end
+    
+    layer.vegaSpec.marks = {marks};
+end
+
+function layer = createStatFitLayer(analysis)
+    layer = struct();
+    layer.isVegaChart = true;
+    
+    % Create Vega specification for custom function fits
+    layer.vegaSpec = createBaseVegaSpec();
+    
+    % Add scales
+    layer.vegaSpec.scales = createVegaScales(analysis);
+    
+    % Add axes
+    layer.vegaSpec.axes = createVegaAxes(analysis);
+    
+    % For custom fits, we'll use polynomial regression as default
+    % Add polynomial regression transform
+    if analysis.grouping.hasColorGroup
+        % Group by color for separate fits
+        fit_transform = struct();
+        fit_transform.type = 'regression';
+        fit_transform.groupby = {'color'};
+        fit_transform.method = 'poly';
+        fit_transform.order = 2;  % Quadratic by default
+        fit_transform.x = 'x';
+        fit_transform.y = 'y';
+        fit_transform.as = {'fit_x', 'fit_y'};
+        
+        layer.vegaSpec.data{1}.transform = {fit_transform};
+        
+        % Create marks for fit lines
+        line_marks = struct();
+        line_marks.name = 'fit_lines';
+        line_marks.type = 'line';
+        line_marks.from = struct('data', 'table');
+        line_marks.encode = struct();
+        line_marks.encode.enter = struct();
+        line_marks.encode.enter.x = struct('scale', 'xscale', 'field', 'fit_x');
+        line_marks.encode.enter.y = struct('scale', 'yscale', 'field', 'fit_y');
+        line_marks.encode.enter.strokeWidth = struct('value', 3);
+        line_marks.encode.enter.stroke = struct('scale', 'color', 'field', 'color');
+        line_marks.encode.enter.strokeDash = struct('value', [5, 5]);
+        
+        layer.vegaSpec.marks = {line_marks};
+    else
+        % Single fit
+        fit_transform = struct();
+        fit_transform.type = 'regression';
+        fit_transform.method = 'poly';
+        fit_transform.order = 2;
+        fit_transform.x = 'x';
+        fit_transform.y = 'y';
+        fit_transform.as = {'fit_x', 'fit_y'};
+        
+        layer.vegaSpec.data{1}.transform = {fit_transform};
+        
+        % Create marks for fit line
+        line_marks = struct();
+        line_marks.name = 'fit_line';
+        line_marks.type = 'line';
+        line_marks.from = struct('data', 'table');
+        line_marks.encode = struct();
+        line_marks.encode.enter = struct();
+        line_marks.encode.enter.x = struct('scale', 'xscale', 'field', 'fit_x');
+        line_marks.encode.enter.y = struct('scale', 'yscale', 'field', 'fit_y');
+        line_marks.encode.enter.strokeWidth = struct('value', 3);
+        line_marks.encode.enter.stroke = struct('value', '#ff4565');
+        line_marks.encode.enter.strokeDash = struct('value', [5, 5]);
+        
+        layer.vegaSpec.marks = {line_marks};
+    end
+end
+
+function layer = createStatBin2dLayer(analysis)
+    layer = struct();
+    layer.isVegaChart = true;
+    
+    % Create Vega specification for 2D histograms/heatmaps
+    layer.vegaSpec = createBaseVegaSpec();
+    
+    % Create scales for 2D binning
+    scales = {};
+    
+    % X scale
+    xscale = struct();
+    xscale.name = 'xscale';
+    xscale.type = 'linear';
+    xscale.domain = struct('data', 'binned2d', 'field', 'x');
+    xscale.range = 'width';
+    scales{end+1} = xscale;
+    
+    % Y scale
+    yscale = struct();
+    yscale.name = 'yscale';
+    yscale.type = 'linear';
+    yscale.domain = struct('data', 'binned2d', 'field', 'y');
+    yscale.range = 'height';
+    scales{end+1} = yscale;
+    
+    % Color scale for density
+    colorscale = struct();
+    colorscale.name = 'color';
+    colorscale.type = 'linear';
+    colorscale.domain = struct('data', 'binned2d', 'field', 'count');
+    colorscale.range = {'#f7f7f7', '#ff4565'};
+    scales{end+1} = colorscale;
+    
+    layer.vegaSpec.scales = scales;
+    
+    % Add axes
+    layer.vegaSpec.axes = createVegaAxes(analysis);
+    
+    % Add 2D binning transform
+    binned2d_data = struct();
+    binned2d_data.name = 'binned2d';
+    binned2d_data.source = 'table';
+    
+    % Simplified 2D binning - in practice would need more complex transforms
+    bin2d_transform = struct();
+    bin2d_transform.type = 'aggregate';
+    bin2d_transform.groupby = {'x', 'y'};  % Simplified
+    bin2d_transform.fields = {};
+    bin2d_transform.ops = {'count'};
+    bin2d_transform.as = {'count'};
+    
+    binned2d_data.transform = {bin2d_transform};
+    layer.vegaSpec.data = {struct('name', 'table'), binned2d_data};
+    
+    % Create heatmap marks
+    marks = struct();
+    marks.name = 'heatmap';
+    marks.type = 'rect';
+    marks.from = struct('data', 'binned2d');
+    
+    marks.encode = struct();
+    marks.encode.enter = struct();
+    marks.encode.enter.x = struct('scale', 'xscale', 'field', 'x');
+    marks.encode.enter.y = struct('scale', 'yscale', 'field', 'y');
+    marks.encode.enter.width = struct('value', 10);
+    marks.encode.enter.height = struct('value', 10);
+    marks.encode.enter.fill = struct('scale', 'color', 'field', 'count');
+    
+    layer.vegaSpec.marks = {marks};
+end
+
+function layer = createStatEllipseLayer(analysis)
+    layer = struct();
+    layer.isVegaChart = true;
+    
+    % Create Vega specification for confidence ellipses
+    layer.vegaSpec = createBaseVegaSpec();
+    
+    % Add scales
+    layer.vegaSpec.scales = createVegaScales(analysis);
+    
+    % Add axes
+    layer.vegaSpec.axes = createVegaAxes(analysis);
+    
+    % Create ellipse marks (simplified implementation)
+    marks = struct();
+    marks.name = 'ellipses';
+    marks.type = 'arc';
+    marks.from = struct('data', 'table');
+    
+    marks.encode = struct();
+    marks.encode.enter = struct();
+    marks.encode.enter.x = struct('scale', 'xscale', 'field', 'x');
+    marks.encode.enter.y = struct('scale', 'yscale', 'field', 'y');
+    marks.encode.enter.startAngle = struct('value', 0);
+    marks.encode.enter.endAngle = struct('value', 6.28);  % 2*pi
+    marks.encode.enter.innerRadius = struct('value', 0);
+    marks.encode.enter.outerRadius = struct('value', 20);
+    marks.encode.enter.fillOpacity = struct('value', 0.3);
+    
+    if analysis.grouping.hasColorGroup
+        marks.encode.enter.fill = struct('scale', 'color', 'field', 'color');
+    else
+        marks.encode.enter.fill = struct('value', '#ff4565');
+    end
+    
+    layer.vegaSpec.marks = {marks};
+end
+
+function layer = createStatCornerhist(analysis)
+    layer = struct();
+    layer.isVegaChart = true;
+    
+    % Create Vega specification for corner histograms
+    layer.vegaSpec = createBaseVegaSpec();
+    
+    % Add scales
+    layer.vegaSpec.scales = createVegaScales(analysis);
+    
+    % Add axes
+    layer.vegaSpec.axes = createVegaAxes(analysis);
+    
+    % Create corner histogram marks (simplified)
+    marks = struct();
+    marks.name = 'corner_hist';
+    marks.type = 'rect';
+    marks.from = struct('data', 'table');
+    
+    marks.encode = struct();
+    marks.encode.enter = struct();
+    marks.encode.enter.x = struct('scale', 'xscale', 'field', 'x');
+    marks.encode.enter.y = struct('scale', 'yscale', 'field', 'y');
+    marks.encode.enter.width = struct('value', 5);
+    marks.encode.enter.height = struct('value', 5);
+    marks.encode.enter.fillOpacity = struct('value', 0.7);
+    
+    if analysis.grouping.hasColorGroup
+        marks.encode.enter.fill = struct('scale', 'color', 'field', 'color');
+    else
+        marks.encode.enter.fill = struct('value', '#ff4565');
+    end
+    
+    layer.vegaSpec.marks = {marks};
+end
+
 %% ===== VEGA HELPER FUNCTIONS =====
 
 function baseSpec = createBaseVegaSpec()
@@ -775,9 +1656,12 @@ function baseSpec = createBaseVegaSpec()
     baseSpec.data = {struct('name', 'table')};
 end
 
-function scales = createVegaScales(analysis, forceBandScale)
+function scales = createVegaScales(analysis, forceBandScale, dataSource)
     if nargin < 2
         forceBandScale = false;
+    end
+    if nargin < 3
+        dataSource = 'table';  % Default to 'table' for backward compatibility
     end
     
     scales = {};
@@ -787,11 +1671,11 @@ function scales = createVegaScales(analysis, forceBandScale)
     xscale.name = 'xscale';
     if forceBandScale || ~isnumeric(analysis.data.x)
         xscale.type = 'band';
-        xscale.domain = struct('data', 'table', 'field', 'x', 'sort', true);
+        xscale.domain = struct('data', dataSource, 'field', 'x', 'sort', true);
         xscale.padding = 0.1;
     else
         xscale.type = 'linear';
-        xscale.domain = struct('data', 'table', 'field', 'x');
+        xscale.domain = struct('data', dataSource, 'field', 'x');
     end
     xscale.range = 'width';
     scales{end+1} = xscale;
@@ -801,10 +1685,10 @@ function scales = createVegaScales(analysis, forceBandScale)
     yscale.name = 'yscale';
     if isnumeric(analysis.data.y)
         yscale.type = 'linear';
-        yscale.domain = struct('data', 'table', 'field', 'y');
+        yscale.domain = struct('data', dataSource, 'field', 'y');
     else
         yscale.type = 'band';
-        yscale.domain = struct('data', 'table', 'field', 'y', 'sort', true);
+        yscale.domain = struct('data', dataSource, 'field', 'y', 'sort', true);
         yscale.padding = 0.1;
     end
     yscale.range = 'height';
@@ -817,7 +1701,7 @@ function scales = createVegaScales(analysis, forceBandScale)
         colorscale = struct();
         colorscale.name = 'color';
         colorscale.type = 'ordinal';
-        colorscale.domain = struct('data', 'table', 'field', 'color');
+        colorscale.domain = struct('data', dataSource, 'field', 'color');
         colorscale.range = {'#fc4464', '#08bc4d', '#04b0fc', '#ff9500', '#9b59b6', '#e74c3c', '#2ecc71', '#3498db'};
         scales{end+1} = colorscale;
     end
@@ -934,8 +1818,18 @@ end
 function [x_clean, y_clean, color_clean] = cleanAndProcessData(x, y, colorData, hasColorGroup)
     % Handle different data types
     if isnumeric(x) && isnumeric(y)
-        % Remove NaN values for numeric data
-        validIndices = ~isnan(x) & ~isnan(y);
+        % Remove NaN and infinite values for numeric data
+        validIndices = ~isnan(x) & ~isnan(y) & isfinite(x) & isfinite(y);
+        
+        % Check if any data was filtered out and warn user
+        originalCount = length(x);
+        filteredCount = sum(validIndices);
+        if filteredCount < originalCount
+            warning('gramm:VegaExport:InvalidData', ...
+                'Removed %d data points containing NaN or infinite values (%d remaining)', ...
+                originalCount - filteredCount, filteredCount);
+        end
+        
         x_clean = x(validIndices);
         y_clean = y(validIndices);
         if hasColorGroup
