@@ -1054,7 +1054,7 @@ function layer = createStatBinLayer(analysis)
     xscale = struct();
     xscale.name = 'xscale';
     xscale.type = 'linear';
-    xscale.domain = struct('data', 'binned', 'field', 'x0');
+    xscale.domain = struct('data', 'table', 'field', 'x');
     xscale.range = 'width';
     scales{end+1} = xscale;
     
@@ -1104,7 +1104,6 @@ function layer = createStatBinLayer(analysis)
         aggregate_transform = struct();
         aggregate_transform.type = 'aggregate';
         aggregate_transform.groupby = {'x0', 'x1', 'color'};
-        aggregate_transform.fields = {};
         aggregate_transform.ops = {'count'};
         aggregate_transform.as = {'count'};
         
@@ -1114,13 +1113,13 @@ function layer = createStatBinLayer(analysis)
         bin_transform = struct();
         bin_transform.type = 'bin';
         bin_transform.field = 'x';
+        bin_transform.extent = struct('signal', 'domain(''xscale'')');
         bin_transform.maxbins = 30;
         bin_transform.as = {'x0', 'x1'};
         
         aggregate_transform = struct();
         aggregate_transform.type = 'aggregate';
         aggregate_transform.groupby = {'x0', 'x1'};
-        aggregate_transform.fields = {};
         aggregate_transform.ops = {'count'};
         aggregate_transform.as = {'count'};
         
