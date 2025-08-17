@@ -932,12 +932,6 @@ function layer = createStatSmoothLayer(analysis)
     % Create Vega specification for smoothed estimates using LOESS
     layer.vegaSpec = createBaseVegaSpec();
     
-    % Add scales
-    layer.vegaSpec.scales = createVegaScales(analysis);
-    
-    % Add axes
-    layer.vegaSpec.axes = createVegaAxes(analysis);
-    
     % Add LOESS smoothing transform
     if analysis.grouping.hasColorGroup
         % Group by color for separate smoothing
@@ -950,6 +944,36 @@ function layer = createStatSmoothLayer(analysis)
         loess_transform.as = {'smooth_x', 'smooth_y'};
         
         layer.vegaSpec.data{1}.transform = {loess_transform};
+        
+        % Create custom scales that reference the transformed fields
+        scales = {};
+        
+        % X scale for smoothed data
+        xscale = struct();
+        xscale.name = 'xscale';
+        xscale.type = 'linear';
+        xscale.domain = struct('data', 'table', 'field', 'smooth_x');
+        xscale.range = 'width';
+        scales{end+1} = xscale;
+        
+        % Y scale for smoothed data
+        yscale = struct();
+        yscale.name = 'yscale';
+        yscale.type = 'linear';
+        yscale.domain = struct('data', 'table', 'field', 'smooth_y');
+        yscale.range = 'height';
+        yscale.nice = true;
+        scales{end+1} = yscale;
+        
+        % Color scale for grouping
+        colorscale = struct();
+        colorscale.name = 'color';
+        colorscale.type = 'ordinal';
+        colorscale.domain = struct('data', 'table', 'field', 'color');
+        colorscale.range = 'category';
+        scales{end+1} = colorscale;
+        
+        layer.vegaSpec.scales = scales;
         
         % Create marks for smooth lines
         line_marks = struct();
@@ -975,6 +999,28 @@ function layer = createStatSmoothLayer(analysis)
         
         layer.vegaSpec.data{1}.transform = {loess_transform};
         
+        % Create custom scales that reference the transformed fields
+        scales = {};
+        
+        % X scale for smoothed data
+        xscale = struct();
+        xscale.name = 'xscale';
+        xscale.type = 'linear';
+        xscale.domain = struct('data', 'table', 'field', 'smooth_x');
+        xscale.range = 'width';
+        scales{end+1} = xscale;
+        
+        % Y scale for smoothed data
+        yscale = struct();
+        yscale.name = 'yscale';
+        yscale.type = 'linear';
+        yscale.domain = struct('data', 'table', 'field', 'smooth_y');
+        yscale.range = 'height';
+        yscale.nice = true;
+        scales{end+1} = yscale;
+        
+        layer.vegaSpec.scales = scales;
+        
         % Create marks for smooth line
         line_marks = struct();
         line_marks.name = 'smooth_line';
@@ -989,6 +1035,9 @@ function layer = createStatSmoothLayer(analysis)
         
         layer.vegaSpec.marks = {line_marks};
     end
+    
+    % Add axes that reference the transformed fields
+    layer.vegaSpec.axes = createVegaAxes(analysis);
 end
 
 function layer = createStatBinLayer(analysis)

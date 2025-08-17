@@ -1,9 +1,22 @@
 ---
 description: Debug Vega JS files and fix MATLAB export_vega.m based on the debug output
-allowed-tools: Bash(*), Edit
+allowed-tools: Read, Edit
 ---
+# Project High-level Goal: Gramm to Vega Translator
 
-# Debug Vega JS File
+**Goal**: Complete translator supporting ALL examples in @html/examples.html - full gramm ecosystem with 30+ chart types and statistical transformations.
+
+## Key Lessons
+- **MATLAB gotchas**: Use `num2str()` not `char()`, careful varargin unpacking
+- **User workflow**: Complete implementations + comprehensive testing preferred
+- **Validation**: HTML index pages make testing much more user-friendly
+
+## Never-Dos
+- ❌ Never modify files under `@gramm/` except `@gramm/export_vega.m`
+- ❌ Never change existing API or break backward compatibility
+- ❌ Never call MATLAB in console for testing
+
+# Current Goal: Debug Vega JS File
 
 Debug the Vega/Vega-Lite JavaScript file: `$ARGUMENTS` and modify the code in the corresponding MATLAB export_vega.m functions.
 
@@ -39,4 +52,3 @@ Provide a structured report with:
 
 - `/jsdebug /path/to/vega_file.js TEXT` - Debug file with full path with error feedback TEXT
 
-**Important**: This command analyzes the JS file and suggests MATLAB fixes. You'll need to manually apply the suggested changes to export_vega.m and regenerate the JS file for testing.

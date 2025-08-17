@@ -1,0 +1,34 @@
+{
+	"hooks": {
+		"Start": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "say 'Hello, Claude Code is ready'"
+					}
+				]
+			}
+		],
+		"Stop": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "say 'Task complete'"
+					}
+				]
+			}
+		],
+		"Notification": [
+			{
+				"hooks": [
+					{
+						"type": "command",
+						"command": "say 'Notification'"
+					}
+				]
+			}
+		]
+	}
+}
