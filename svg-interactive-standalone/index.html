@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Interactive - Standalone Library Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+        
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .chart-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .chart-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+            text-align: center;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+        }
+        
+        .chart-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .chart-container svg {
+            width: 100%;
+            max-width: 500px;
+            height: auto;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .instructions {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border: 2px solid #2196f3;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .instructions h3 {
+            margin: 0 0 15px 0;
+            color: #1976d2;
+            font-size: 22px;
+        }
+        
+        .instructions ul {
+            margin: 0;
+            padding-left: 25px;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .controls h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn.secondary {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #333;
+        }
+        
+        .selection-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        
+        .selection-info h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .features {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+        
+        .features h3 {
+            margin: 0 0 20px 0;
+            color: #333;
+            text-align: center;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .feature-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .feature-item h4 {
+            margin: 0 0 8px 0;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .feature-item p {
+            margin: 0;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 SVG Interactive - Standalone Demo</h1>
+        <p class="subtitle">Transform static SVG visualizations into interactive experiences with zero dependencies</p>
+        
+        <div class="instructions">
+            <h3>How to Interact</h3>
+            <ul>
+                <li><strong>Hover:</strong> Move your mouse over data points to see tooltips with exact values</li>
+                <li><strong>Click:</strong> Click on data points to select them (selected points turn orange)</li>
+                <li><strong>Multi-select:</strong> Hold Ctrl/Cmd while clicking to select multiple points</li>
+                <li><strong>Clear Selection:</strong> Use the "Clear Selection" button below</li>
+                <li><strong>Export Data:</strong> Use the "Export Data" button to see the JSON output</li>
+            </ul>
+        </div>
+        
+        <div class="controls">
+            <h3>Controls & Tooltip Styles</h3>
+            <div class="button-group">
+                <button class="btn" onclick="clearAllSelections()">Clear All Selections</button>
+                <button class="btn secondary" onclick="selectRandomPoints()">Select Random Points</button>
+                <button class="btn" onclick="exportData()">Export Data</button>
+                <button class="btn secondary" onclick="showDebugInfo()">Show Debug Info</button>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <h4 style="margin: 10px 0;">📋 Tooltip Styles (hover over points to test):</h4>
+                <div class="button-group">
+                    <button class="btn" onclick="changeTooltipStyle('basic')">Basic Tooltips</button>
+                    <button class="btn" onclick="changeTooltipStyle('enhanced')">Enhanced Tooltips</button>
+                    <button class="btn" onclick="changeTooltipStyle('detailed')">Detailed Tooltips</button>
+                </div>
+            </div>
+            
+            <div class="selection-info">
+                <h4>Selection Info</h4>
+                <div id="selection-display">No points selected</div>
+            </div>
+        </div>
+        
+        <div class="demo-grid">
+            <div class="chart-section">
+                <div class="chart-title">Chart 1: Displacement vs Highway Fuel Efficiency</div>
+                <div class="chart-container" id="chart1">
+                    <div>Loading chart...</div>
+                </div>
+                <div class="status" id="status1">Initializing...</div>
+            </div>
+            
+            <div class="chart-section">
+                <div class="chart-title">Chart 2: Displacement vs Residual Values</div>
+                <div class="chart-container" id="chart2">
+                    <div>Loading chart...</div>
+                </div>
+                <div class="status" id="status2">Initializing...</div>
+            </div>
+        </div>
+        
+        <div class="features">
+            <h3>Key Features</h3>
+            <div class="features-grid">
+                <div class="feature-item">
+                    <h4>🚀 Zero Dependencies</h4>
+                    <p>Pure JavaScript with no external libraries required</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🎯 Smart Coordinate Mapping</h4>
+                    <p>Automatically maps SVG pixels to data values using axis information</p>
+                </div>
+                <div class="feature-item">
+                    <h4>💡 Intelligent Element Detection</h4>
+                    <p>Automatically identifies data points and ignores background elements</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🎨 Customizable Styling</h4>
+                    <p>Configurable colors, tooltips, and interaction behaviors</p>
+                </div>
+                <div class="feature-item">
+                    <h4>📊 Multiple Chart Types</h4>
+                    <p>Supports scatter plots, bar charts, line charts, and custom shapes</p>
+                </div>
+                <div class="feature-item">
+                    <h4>🔧 MATLAB Ready</h4>
+                    <p>Designed for easy integration with MATLAB's web components</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="log" id="log">
+            <strong>Console Log:</strong><br>
+        </div>
+    </div>
+
+    <!-- Load the libraries -->
+    <script src="lib/coordinate-mapper.js"></script>
+    <script src="lib/svg-interactive.js"></script>
+    
+    <script>
+        // Global variables for chart instances
+        let chart1Interactive, chart2Interactive;
+        
+        // Custom console logging for demo
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logElement = document.getElementById('log');
+        
+        function addToLog(type, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : 'blue';
+            logElement.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span><br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog('log', args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog('error', args.join(' '));
+        };
+        
+        // Load and initialize charts
+        function loadChart(chartId, svgFile, statusId, title) {
+            const container = document.getElementById(chartId);
+            const status = document.getElementById(statusId);
+            
+            fetch(`examples/${svgFile}`)
+                .then(response => response.text())
+                .then(svgText => {
+                    container.innerHTML = svgText;
+                    status.textContent = 'SVG loaded, initializing...';
+                    status.className = 'status';
+                    
+                    // Initialize interactive features
+                    setTimeout(() => {
+                        try {
+                            const svg = container.querySelector('svg');
+                            if (!svg) throw new Error('SVG not found');
+                            
+                            const interactive = new SVGInteractive(svg, {
+                                tooltipStyle: 'enhanced', // Start with enhanced style
+                                tooltipDelay: 200, // Faster tooltip response
+                                enableDetailOnDemand: true,
+                                showDataContext: true,
+                                showStatistics: true,
+                                onSelect: (selectedData, point) => {
+                                    console.log(`Selected point in ${title}:`, point);
+                                    updateSelectionDisplay();
+                                },
+                                onHover: (point, action) => {
+                                    if (action === 'enter') {
+                                        console.log(`Hovering over point in ${title}:`, point.id);
+                                    }
+                                }
+                            });
+                            
+                            // Store reference
+                            if (chartId === 'chart1') {
+                                chart1Interactive = interactive;
+                            } else {
+                                chart2Interactive = interactive;
+                            }
+                            
+                            status.textContent = `✓ Ready: ${interactive.getDataPoints().length} interactive points`;
+                            status.className = 'status success';
+                            
+                            console.log(`${title} initialized with ${interactive.getDataPoints().length} points`);
+                            
+                        } catch (error) {
+                            status.textContent = `✗ Error: ${error.message}`;
+                            status.className = 'status error';
+                            console.error(`Error initializing ${title}:`, error);
+                        }
+                    }, 100);
+                })
+                .catch(error => {
+                    container.innerHTML = `<div style="color: red; padding: 20px;">Error loading ${svgFile}: ${error.message}</div>`;
+                    status.textContent = `✗ Failed to load ${svgFile}`;
+                    status.className = 'status error';
+                    console.error(`Failed to load ${svgFile}:`, error);
+                });
+        }
+        
+        // Control functions
+        function clearAllSelections() {
+            if (chart1Interactive) chart1Interactive.clearSelection();
+            if (chart2Interactive) chart2Interactive.clearSelection();
+            updateSelectionDisplay();
+            console.log('Cleared all selections');
+        }
+        
+        function selectRandomPoints() {
+            const charts = [chart1Interactive, chart2Interactive].filter(c => c);
+            charts.forEach((chart, index) => {
+                const points = chart.getDataPoints();
+                if (points.length > 0) {
+                    const randomIds = [];
+                    const numToSelect = Math.min(5, Math.floor(points.length * 0.1));
+                    for (let i = 0; i < numToSelect; i++) {
+                        const randomIndex = Math.floor(Math.random() * points.length);
+                        const id = points[randomIndex].id;
+                        if (!randomIds.includes(id)) {
+                            randomIds.push(id);
+                        }
+                    }
+                    chart.selectPoints(randomIds);
+                }
+            });
+            updateSelectionDisplay();
+            console.log('Selected random points');
+        }
+        
+        function exportData() {
+            const data = {
+                chart1: chart1Interactive ? chart1Interactive.exportData() : null,
+                chart2: chart2Interactive ? chart2Interactive.exportData() : null,
+                timestamp: new Date().toISOString()
+            };
+            
+            console.log('Exported data:', data);
+            
+            // Download as JSON file
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'svg-interactive-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function showDebugInfo() {
+            const debug = {
+                chart1: chart1Interactive ? {
+                    dataPoints: chart1Interactive.getDataPoints().length,
+                    selected: chart1Interactive.getSelectedData().length,
+                    coordinateInfo: chart1Interactive.coordinateMapper.getDebugInfo()
+                } : null,
+                chart2: chart2Interactive ? {
+                    dataPoints: chart2Interactive.getDataPoints().length,
+                    selected: chart2Interactive.getSelectedData().length,
+                    coordinateInfo: chart2Interactive.coordinateMapper.getDebugInfo()
+                } : null
+            };
+            
+            console.log('Debug info:', debug);
+            alert('Debug info logged to console. Check the log below.');
+        }
+        
+        function updateSelectionDisplay() {
+            const display = document.getElementById('selection-display');
+            let totalSelected = 0;
+            let details = [];
+            
+            if (chart1Interactive) {
+                const selected = chart1Interactive.getSelectedData();
+                totalSelected += selected.length;
+                if (selected.length > 0) {
+                    details.push(`Chart 1: ${selected.length} points`);
+                }
+            }
+            
+            if (chart2Interactive) {
+                const selected = chart2Interactive.getSelectedData();
+                totalSelected += selected.length;
+                if (selected.length > 0) {
+                    details.push(`Chart 2: ${selected.length} points`);
+                }
+            }
+            
+            if (totalSelected === 0) {
+                display.textContent = 'No points selected';
+            } else {
+                display.textContent = `${totalSelected} total points selected (${details.join(', ')})`;
+            }
+        }
+        
+        // Function to change tooltip style dynamically
+        function changeTooltipStyle(style) {
+            const charts = [chart1Interactive, chart2Interactive].filter(c => c);
+            charts.forEach(chart => {
+                if (chart) {
+                    chart.options.tooltipStyle = style;
+                    
+                    // Recreate tooltip with new styling
+                    if (chart.tooltip) {
+                        chart.tooltip.remove();
+                        chart.setupTooltip();
+                    }
+                    
+                    // Rebind the default tooltip format to use the new style
+                    chart.options.tooltipFormat = chart.defaultTooltipFormat.bind(chart);
+                }
+            });
+            
+            console.log(`Changed tooltip style to: ${style}`);
+            console.log(`Hover over data points to see the new ${style} tooltip style!`);
+            
+            // Update button states
+            document.querySelectorAll('.button-group button').forEach(btn => {
+                btn.style.backgroundColor = '';
+                btn.style.transform = '';
+            });
+            
+            // Highlight active button
+            if (event && event.target) {
+                event.target.style.backgroundColor = '#4CAF50';
+                event.target.style.transform = 'scale(1.05)';
+            }
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Starting SVG Interactive demo...');
+            
+            loadChart('chart1', 'r4-1.svg', 'status1', 'Chart 1');
+            loadChart('chart2', 'r4-2.svg', 'status2', 'Chart 2');
+        });
+    </script>
+</body>
+</html>

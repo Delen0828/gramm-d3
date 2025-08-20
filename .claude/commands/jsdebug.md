@@ -4,25 +4,22 @@ allowed-tools: Read, Edit
 ---
 # Project High-level Goal: Gramm to Vega Translator
 
-**Goal**: Complete translator supporting ALL examples in @html/examples.html - full gramm ecosystem with 30+ chart types and statistical transformations.
-
-## Key Lessons
-- **MATLAB gotchas**: Use `num2str()` not `char()`, careful varargin unpacking
-- **User workflow**: Complete implementations + comprehensive testing preferred
-- **Validation**: HTML index pages make testing much more user-friendly
-
-## Never-Dos
-- ❌ Never modify files under `@gramm/` except `@gramm/export_vega.m`
-- ❌ Never change existing API or break backward compatibility
-- ❌ Never call MATLAB in console for testing
 
 # Current Goal: Debug Vega JS File
 
 Debug the Vega/Vega-Lite JavaScript file: `$ARGUMENTS` and modify the code in the corresponding MATLAB export_vega.m functions.
 
+
+## Never-Dos
+- ❌ Never modify files under `@gramm/` except `@gramm/export_vega.m`
+- ❌ Never change existing API or break backward compatibility
+- ❌ Never change the working code in functions for other test cases
+- ❌ Never call MATLAB in console for testing
+
 ## Analysis Process
 
-1. **Read and analyze the target JS file** for syntax errors, structural issues, and common Vega problems
+1. **Read and analyze the target JS file** for syntax errors, structural issues, and common Vega problems. Compare the current JS file with working example user provides.
+
 2. **Identify specific issues** including:
    - Syntax errors and malformed JSON
    - Missing required Vega-Lite schema elements
@@ -50,5 +47,5 @@ Provide a structured report with:
 
 ## Usage Examples
 
-- `/jsdebug /path/to/vega_file.js TEXT` - Debug file with full path with error feedback TEXT
+- `/jsdebug /path/to/vega_file.js WORKING_EXAMPLE` - Debug file vega_file.js with a working example vega code in WORKING_EXAMPLE
 

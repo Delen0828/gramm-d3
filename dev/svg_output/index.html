@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gramm SVG Export: Static vs Interactive Comparison</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            line-height: 1.6;
+        }
+        
+        .container { 
+            max-width: 1600px; 
+            margin: 0 auto; 
+        }
+        
+        h1 { 
+            color: #333; 
+            text-align: center; 
+            margin-bottom: 10px; 
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+            font-style: italic;
+        }
+        
+        .summary { 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px; 
+            border-radius: 15px; 
+            margin-bottom: 30px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        
+        .summary h2 {
+            margin-top: 0;
+            color: white;
+        }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .controls h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn.secondary {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #333;
+        }
+        
+        .selection-info {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+        }
+        
+        .selection-info h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 40px; 
+        }
+        
+        .chart-container { 
+            background: white; 
+            padding: 25px; 
+            border-radius: 15px; 
+            box-shadow: 0 8px 32px rgba(0,0,0,0.15); 
+            border: 1px solid #e0e0e0;
+        }
+        
+        .chart-title { 
+            font-size: 20px; 
+            font-weight: bold; 
+            color: #333; 
+            margin-bottom: 20px; 
+            text-align: center; 
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        .version-container {
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            background: #fafafa;
+        }
+        
+        .version-header {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: center;
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+        }
+        
+        .static-header {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+        }
+        
+        .interactive-header {
+            background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+        }
+        
+        .svg-container { 
+            text-align: center; 
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .svg-container svg { 
+            max-width: 100%; 
+            height: auto; 
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .status {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.loading {
+            background: #cce5ff;
+            color: #0066cc;
+            border: 1px solid #99ccff;
+        }
+        
+        .instructions {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border: 2px solid #2196f3;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .instructions h3 {
+            margin: 0 0 15px 0;
+            color: #1976d2;
+            font-size: 18px;
+        }
+        
+        .instructions ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        .footer { 
+            text-align: center; 
+            margin-top: 50px; 
+            color: #666; 
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        /* Interactive SVG styling */
+        .interactive-point {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .interactive-point:hover {
+            filter: brightness(1.2);
+            transform: scale(1.1);
+        }
+        
+        .interactive-point.selected {
+            stroke: #ff6b35 !important;
+            stroke-width: 3 !important;
+            fill: #ff6b35 !important;
+        }
+        
+        /* Tooltip styling */
+        .svg-tooltip {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            pointer-events: none;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            max-width: 200px;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 1200px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 SVG Interactive Comparison</h1>
+        <p class="subtitle">Compare Static vs Interactive Gramm Charts</p>
+        
+        <div class="summary">
+            <h2>📋 Test Summary</h2>
+            <p><strong>Total Charts:</strong> <span id="chart-count">Loading...</span> charts covering geometric objects and statistical transformations</p>
+            <p><strong>Format:</strong> Static SVG vs Interactive SVG with tooltips, selection, and data export</p>
+            <p><strong>Interactive Features:</strong> Hover tooltips, click selection, multi-select, data export</p>
+            <p><strong>Generated:</strong> <span id="generation-time">Loading...</span></p>
+        </div>
+        
+        <div class="instructions">
+            <h3>🎯 How to Use Interactive Features</h3>
+            <ul>
+                <li><strong>Hover:</strong> Move mouse over data points in interactive charts to see tooltips with exact values</li>
+                <li><strong>Click:</strong> Click data points to select them (orange highlight)</li>
+                <li><strong>Multi-select:</strong> Hold Ctrl/Cmd while clicking to select multiple points</li>
+                <li><strong>Clear:</strong> Use "Clear All Selections" button to reset</li>
+                <li><strong>Export:</strong> Use "Export Data" to download selected points as JSON</li>
+                <li><strong>Compare:</strong> Side-by-side view shows static (left) vs interactive (right) versions</li>
+            </ul>
+        </div>
+        
+        <div class="controls">
+            <h3>🎮 Global Controls</h3>
+            <div class="button-group">
+                <button class="btn" onclick="clearAllSelections()">🧹 Clear All Selections</button>
+                <button class="btn secondary" onclick="selectRandomPoints()">🎲 Select Random Points</button>
+                <button class="btn" onclick="exportAllData()">💾 Export Data</button>
+                <button class="btn secondary" onclick="showDebugInfo()">🔍 Debug Info</button>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <h4>💬 Tooltip Styles:</h4>
+                <div class="button-group">
+                    <button class="btn" onclick="changeTooltipStyle('basic')">Basic</button>
+                    <button class="btn" onclick="changeTooltipStyle('enhanced')">Enhanced</button>
+                    <button class="btn" onclick="changeTooltipStyle('detailed')">Detailed</button>
+                </div>
+            </div>
+            
+            <div class="selection-info">
+                <h4>📊 Selection Summary</h4>
+                <div id="selection-display">No points selected</div>
+            </div>
+        </div>
+        
+        <div class="grid" id="charts-grid">
+            <div class="loading-spinner"></div>
+            <p style="text-align: center; color: #666;">Loading charts...</p>
+        </div>
+        
+        <div class="footer">
+            <p>🚀 Generated by Gramm SVG Export Test Suite with Interactive Enhancement</p>
+            <p><a href="https://github.com/piermorel/gramm">Gramm Toolbox</a> + SVG Interactive Library</p>
+        </div>
+    </div>
+
+    <!-- Load SVG Interactive Libraries -->
+    <script src="../../svg-interactive-standalone/lib/coordinate-mapper.js"></script>
+    <script src="../../svg-interactive-standalone/lib/svg-interactive.js"></script>
+    
+    <script>
+        // Global variables
+        let interactiveInstances = [];
+        let svgFiles = [];
+        let chartTitles = [];
+        
+        // SVG files and titles (populated by MATLAB script)
+        const chartData = [
+            { file: 'test_geom_point.svg', title: 'Basic Scatter Plot' },
+            { file: 'test_geom_point_colors.svg', title: 'Scatter Plot with Color Groups' },
+            { file: 'test_geom_line.svg', title: 'Basic Line Chart' },
+            { file: 'test_geom_line_multi.svg', title: 'Multi-Series Line Chart' },
+            { file: 'test_geom_bar_categorical.svg', title: 'Categorical Bar Chart' },
+            { file: 'test_geom_bar_groups.svg', title: 'Grouped Bar Chart' },
+            { file: 'test_combined_point_line.svg', title: 'Combined Point and Line' },
+            { file: 'test_stat_glm.svg', title: 'Linear Regression with GLM' },
+            { file: 'test_stat_glm_groups.svg', title: 'Multi-Group Linear Regression' },
+            { file: 'test_stat_smooth.svg', title: 'Smoothed Curve' },
+            { file: 'test_stat_bin.svg', title: 'Histogram with stat_bin' },
+            { file: 'test_stat_bin_groups.svg', title: 'Grouped Histogram' },
+            { file: 'test_stat_summary.svg', title: 'Statistical Summary with Error Bars' },
+            { file: 'test_stat_density.svg', title: 'Kernel Density Estimation' },
+            { file: 'test_stat_violin.svg', title: 'Violin Plots' },
+            { file: 'test_stat_boxplot.svg', title: 'Box and Whisker Plots' },
+            { file: 'test_combined_stats.svg', title: 'Combined Statistical Methods' }
+        ];
+        
+        // Initialize page
+        function initializePage() {
+            console.log('Initializing SVG Interactive Comparison...');
+            
+            // Update summary info
+            document.getElementById('chart-count').textContent = chartData.length;
+            document.getElementById('generation-time').textContent = new Date().toLocaleString();
+            
+            // Load all charts
+            loadAllCharts();
+        }
+        
+        function loadAllCharts() {
+            const grid = document.getElementById('charts-grid');
+            grid.innerHTML = ''; // Clear loading content
+            
+            chartData.forEach((chart, index) => {
+                createChartComparison(chart, index);
+            });
+        }
+        
+        function createChartComparison(chartInfo, index) {
+            const grid = document.getElementById('charts-grid');
+            
+            const chartContainer = document.createElement('div');
+            chartContainer.className = 'chart-container';
+            chartContainer.innerHTML = `
+                <div class="chart-title">${index + 1}. ${chartInfo.title}</div>
+                <div class="comparison-grid">
+                    <div class="version-container">
+                        <div class="version-header static-header">🖼️ Static SVG</div>
+                        <div class="svg-container" id="static-${index}">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        <div class="status loading">Loading static version...</div>
+                    </div>
+                    <div class="version-container">
+                        <div class="version-header interactive-header">⚡ Interactive SVG</div>
+                        <div class="svg-container" id="interactive-${index}">
+                            <div class="loading-spinner"></div>
+                        </div>
+                        <div class="status loading" id="status-${index}">Loading interactive version...</div>
+                    </div>
+                </div>
+            `;
+            
+            grid.appendChild(chartContainer);
+            
+            // Load SVG content
+            loadSVGContent(chartInfo.file, index);
+        }
+        
+        function loadSVGContent(filename, index) {
+            fetch(filename)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(svgContent => {
+                    // Load static version
+                    const staticContainer = document.getElementById(`static-${index}`);
+                    staticContainer.innerHTML = svgContent;
+                    staticContainer.nextElementSibling.textContent = '✅ Static version loaded';
+                    staticContainer.nextElementSibling.className = 'status success';
+                    
+                    // Load interactive version
+                    const interactiveContainer = document.getElementById(`interactive-${index}`);
+                    interactiveContainer.innerHTML = svgContent;
+                    
+                    // Initialize interactive features
+                    setTimeout(() => {
+                        initializeInteractive(interactiveContainer, index);
+                    }, 100);
+                })
+                .catch(error => {
+                    console.error(`Failed to load ${filename}:`, error);
+                    
+                    // Update static container
+                    const staticContainer = document.getElementById(`static-${index}`);
+                    staticContainer.innerHTML = `<div style="color: red; padding: 20px;">❌ Error loading ${filename}</div>`;
+                    staticContainer.nextElementSibling.textContent = `❌ Failed to load static version`;
+                    staticContainer.nextElementSibling.className = 'status error';
+                    
+                    // Update interactive container
+                    const interactiveContainer = document.getElementById(`interactive-${index}`);
+                    interactiveContainer.innerHTML = `<div style="color: red; padding: 20px;">❌ Error loading ${filename}</div>`;
+                    document.getElementById(`status-${index}`).textContent = `❌ Failed to load`;
+                    document.getElementById(`status-${index}`).className = 'status error';
+                });
+        }
+        
+        function initializeInteractive(container, index) {
+            try {
+                const svg = container.querySelector('svg');
+                if (!svg) {
+                    throw new Error('SVG element not found');
+                }
+                
+                // Create interactive instance
+                const interactive = new SVGInteractive(svg, {
+                    tooltipStyle: 'enhanced',
+                    tooltipDelay: 200,
+                    enableDetailOnDemand: true,
+                    showDataContext: true,
+                    onSelect: (selectedData, point) => {
+                        console.log(`Selected point in chart ${index}:`, point);
+                        updateSelectionDisplay();
+                    },
+                    onHover: (point, action) => {
+                        if (action === 'enter') {
+                            console.log(`Hovering over point in chart ${index}:`, point.id);
+                        }
+                    }
+                });
+                
+                // Store reference
+                interactiveInstances[index] = interactive;
+                
+                // Update status
+                const pointCount = interactive.getDataPoints().length;
+                const status = document.getElementById(`status-${index}`);
+                status.textContent = `⚡ Interactive: ${pointCount} data points`;
+                status.className = 'status success';
+                
+                console.log(`Chart ${index} initialized with ${pointCount} interactive points`);
+                
+            } catch (error) {
+                console.error(`Error initializing interactive features for chart ${index}:`, error);
+                const status = document.getElementById(`status-${index}`);
+                status.textContent = `❌ Interactive failed: ${error.message}`;
+                status.className = 'status error';
+            }
+        }
+        
+        // Control functions
+        function clearAllSelections() {
+            interactiveInstances.forEach(instance => {
+                if (instance) {
+                    instance.clearSelection();
+                }
+            });
+            updateSelectionDisplay();
+            console.log('Cleared all selections across all charts');
+        }
+        
+        function selectRandomPoints() {
+            let totalSelected = 0;
+            interactiveInstances.forEach((instance, index) => {
+                if (instance) {
+                    const points = instance.getDataPoints();
+                    if (points.length > 0) {
+                        const numToSelect = Math.min(3, Math.ceil(points.length * 0.1));
+                        const randomIds = [];
+                        for (let i = 0; i < numToSelect; i++) {
+                            const randomIndex = Math.floor(Math.random() * points.length);
+                            const id = points[randomIndex].id;
+                            if (!randomIds.includes(id)) {
+                                randomIds.push(id);
+                            }
+                        }
+                        instance.selectPoints(randomIds);
+                        totalSelected += randomIds.length;
+                    }
+                }
+            });
+            updateSelectionDisplay();
+            console.log(`Selected ${totalSelected} random points across all charts`);
+        }
+        
+        function exportAllData() {
+            const exportData = {
+                timestamp: new Date().toISOString(),
+                charts: []
+            };
+            
+            interactiveInstances.forEach((instance, index) => {
+                if (instance) {
+                    exportData.charts.push({
+                        chartIndex: index,
+                        title: chartData[index]?.title || `Chart ${index}`,
+                        data: instance.exportData()
+                    });
+                }
+            });
+            
+            console.log('Export data:', exportData);
+            
+            // Download as JSON
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `gramm-interactive-data-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function showDebugInfo() {
+            const debugInfo = {
+                totalCharts: interactiveInstances.length,
+                activeInstances: interactiveInstances.filter(i => i).length,
+                charts: []
+            };
+            
+            interactiveInstances.forEach((instance, index) => {
+                if (instance) {
+                    debugInfo.charts.push({
+                        chartIndex: index,
+                        title: chartData[index]?.title || `Chart ${index}`,
+                        dataPoints: instance.getDataPoints().length,
+                        selectedPoints: instance.getSelectedData().length,
+                        coordinateInfo: instance.coordinateMapper.getDebugInfo()
+                    });
+                }
+            });
+            
+            console.log('Debug info:', debugInfo);
+            alert(`Debug info logged to console.\n\nSummary:\n- Total charts: ${debugInfo.totalCharts}\n- Active interactive instances: ${debugInfo.activeInstances}\n- Check browser console for detailed coordinate mapping info.`);
+        }
+        
+        function changeTooltipStyle(style) {
+            interactiveInstances.forEach(instance => {
+                if (instance) {
+                    instance.options.tooltipStyle = style;
+                    if (instance.tooltip) {
+                        instance.tooltip.remove();
+                        instance.setupTooltip();
+                    }
+                    instance.options.tooltipFormat = instance.defaultTooltipFormat.bind(instance);
+                }
+            });
+            
+            console.log(`Changed tooltip style to: ${style}`);
+            
+            // Visual feedback for button selection
+            document.querySelectorAll('.button-group button').forEach(btn => {
+                btn.style.backgroundColor = '';
+                btn.style.transform = '';
+            });
+            
+            if (event && event.target) {
+                event.target.style.backgroundColor = '#4CAF50';
+                event.target.style.transform = 'scale(1.05)';
+            }
+        }
+        
+        function updateSelectionDisplay() {
+            const display = document.getElementById('selection-display');
+            let totalSelected = 0;
+            let chartDetails = [];
+            
+            interactiveInstances.forEach((instance, index) => {
+                if (instance) {
+                    const selected = instance.getSelectedData();
+                    if (selected.length > 0) {
+                        totalSelected += selected.length;
+                        const chartTitle = chartData[index]?.title || `Chart ${index}`;
+                        chartDetails.push(`${chartTitle}: ${selected.length} points`);
+                    }
+                }
+            });
+            
+            if (totalSelected === 0) {
+                display.innerHTML = '📊 No points selected<br><small>Click on data points in the interactive charts to select them</small>';
+            } else {
+                display.innerHTML = `
+                    <strong>📈 ${totalSelected} total points selected</strong><br>
+                    <small>${chartDetails.join('<br>')}</small>
+                `;
+            }
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Starting SVG Interactive Comparison demo...');
+            initializePage();
+        });
+        
+        // Handle errors
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+        });
+    </script>
+</body>
+</html>

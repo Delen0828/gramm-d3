@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test - SVG Interactive</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .chart-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        .chart-container svg {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            max-width: 100%;
+            height: auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simple Test - SVG Interactive</h1>
+        <p>Testing the standalone SVG interactive library without conflicts.</p>
+        
+        <div class="chart-container" id="chart1">
+            <h3>Chart 1: Loading...</h3>
+        </div>
+        
+        <div class="status" id="status1">Initializing...</div>
+        
+        <div class="chart-container" id="chart2">
+            <h3>Chart 2: Loading...</h3>
+        </div>
+        
+        <div class="status" id="status2">Initializing...</div>
+        
+        <div>
+            <button onclick="testSelections()">Test Selections</button>
+            <button onclick="clearAll()">Clear All</button>
+            <button onclick="exportData()">Export Data</button>
+        </div>
+        
+        <div class="log" id="log">
+            <strong>Test Log:</strong><br>
+        </div>
+    </div>
+
+    <!-- Load the libraries -->
+    <script src="../lib/coordinate-mapper.js"></script>
+    <script src="../lib/svg-interactive.js"></script>
+    
+    <script>
+        let chart1Interactive, chart2Interactive;
+        
+        function log(message) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logEl.innerHTML += `[${timestamp}] ${message}<br>`;
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(message);
+        }
+        
+        function loadChart(containerId, svgFile, statusId) {
+            const container = document.getElementById(containerId);
+            const status = document.getElementById(statusId);
+            
+            fetch(svgFile)
+                .then(response => response.text())
+                .then(svgText => {
+                    container.innerHTML = svgText;
+                    log(`✓ ${svgFile} loaded successfully`);
+                    
+                    setTimeout(() => {
+                        try {
+                            const svg = container.querySelector('svg');
+                            if (!svg) throw new Error('SVG not found');
+                            
+                            const interactive = new SVGInteractive(svg, {
+                                onSelect: (selectedData, point) => {
+                                    log(`Selected point ${point.id} in ${containerId}`);
+                                },
+                                onHover: (point, action) => {
+                                    if (action === 'enter') {
+                                        log(`Hovering over point ${point.id} in ${containerId}`);
+                                    }
+                                }
+                            });
+                            
+                            // Store reference
+                            if (containerId === 'chart1') {
+                                chart1Interactive = interactive;
+                            } else {
+                                chart2Interactive = interactive;
+                            }
+                            
+                            const pointCount = interactive.getDataPoints().length;
+                            status.innerHTML = `✓ Success: ${pointCount} interactive points`;
+                            status.className = 'status success';
+                            log(`✓ ${containerId} initialized with ${pointCount} points`);
+                            
+                            // Test coordinate mapping
+                            const debugInfo = interactive.coordinateMapper.getDebugInfo();
+                            log(`Axis info for ${containerId}: X-ticks: ${debugInfo.xAxisTicks.length}, Y-ticks: ${debugInfo.yAxisTicks.length}`);
+                            
+                        } catch (error) {
+                            status.innerHTML = `✗ Error: ${error.message}`;
+                            status.className = 'status error';
+                            log(`✗ Error in ${containerId}: ${error.message}`);
+                        }
+                    }, 100);
+                })
+                .catch(error => {
+                    status.innerHTML = `✗ Failed to load ${svgFile}`;
+                    status.className = 'status error';
+                    log(`✗ Failed to load ${svgFile}: ${error.message}`);
+                });
+        }
+        
+        function testSelections() {
+            log('Testing selections...');
+            
+            if (chart1Interactive) {
+                const points = chart1Interactive.getDataPoints();
+                if (points.length > 5) {
+                    chart1Interactive.selectPoints([0, 2, 4]);
+                    log('Selected points 0, 2, 4 in chart1');
+                }
+            }
+            
+            if (chart2Interactive) {
+                const points = chart2Interactive.getDataPoints();
+                if (points.length > 3) {
+                    chart2Interactive.selectPoints([1, 3]);
+                    log('Selected points 1, 3 in chart2');
+                }
+            }
+        }
+        
+        function clearAll() {
+            if (chart1Interactive) chart1Interactive.clearSelection();
+            if (chart2Interactive) chart2Interactive.clearSelection();
+            log('Cleared all selections');
+        }
+        
+        function exportData() {
+            const data = {
+                chart1: chart1Interactive ? chart1Interactive.exportData() : null,
+                chart2: chart2Interactive ? chart2Interactive.exportData() : null
+            };
+            log(`Export data: ${JSON.stringify(data, null, 2)}`);
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            log('Starting simple test...');
+            loadChart('chart1', 'r4-1.svg', 'status1');
+            loadChart('chart2', 'r4-2.svg', 'status2');
+        });
+    </script>
+</body>
+</html>

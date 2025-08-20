@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Interactive - All Chart Types Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f8f9fa;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+        
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .chart-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+        
+        .chart-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #333;
+            text-align: center;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+        }
+        
+        .chart-container {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .chart-container svg {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: 500;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .controls h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            font-size: 12px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn.secondary {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #333;
+        }
+        
+        .chart-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 11px;
+            color: #666;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 SVG Interactive - All Chart Types Test</h1>
+        <p class="subtitle">Testing enhanced tooltips across scatter plots, line charts, and bar charts</p>
+        
+        <div class="controls">
+            <h3>Global Controls & Tooltip Styles</h3>
+            <div class="button-group">
+                <button class="btn" onclick="clearAllSelections()">Clear All Selections</button>
+                <button class="btn secondary" onclick="selectRandomPoints()">Select Random Points</button>
+                <button class="btn" onclick="exportAllData()">Export All Data</button>
+                <button class="btn secondary" onclick="testAllInteractions()">Test All Interactions</button>
+            </div>
+            
+            <div>
+                <h4 style="margin: 10px 0; font-size: 14px;">📋 Tooltip Styles (hover over elements to test):</h4>
+                <div class="button-group">
+                    <button class="btn" onclick="changeTooltipStyle('basic')">Basic Tooltips</button>
+                    <button class="btn" onclick="changeTooltipStyle('enhanced')">Enhanced Tooltips</button>
+                    <button class="btn" onclick="changeTooltipStyle('detailed')">Detailed Tooltips</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="chart-grid">
+            <!-- Scatter Plot 1 -->
+            <div class="chart-section">
+                <div class="chart-title">Scatter Plot 1: Displacement vs Highway MPG</div>
+                <div class="chart-container" id="chart1">
+                    <div>Loading scatter plot...</div>
+                </div>
+                <div class="status" id="status1">Initializing...</div>
+                <div class="chart-info" id="info1">Chart type: Scatter plot with circles</div>
+            </div>
+            
+            <!-- Scatter Plot 2 -->
+            <div class="chart-section">
+                <div class="chart-title">Scatter Plot 2: Displacement vs Residuals</div>
+                <div class="chart-container" id="chart2">
+                    <div>Loading scatter plot...</div>
+                </div>
+                <div class="status" id="status2">Initializing...</div>
+                <div class="chart-info" id="info2">Chart type: Scatter plot with circles</div>
+            </div>
+            
+            <!-- Line Chart -->
+            <div class="chart-section">
+                <div class="chart-title">Line Chart: Time Series Data</div>
+                <div class="chart-container" id="chart3">
+                    <div>Loading line chart...</div>
+                </div>
+                <div class="status" id="status3">Initializing...</div>
+                <div class="chart-info" id="info3">Chart type: Line chart with polylines</div>
+            </div>
+            
+            <!-- Bar Chart -->
+            <div class="chart-section">
+                <div class="chart-title">Bar Chart: Weather Data</div>
+                <div class="chart-container" id="chart4">
+                    <div>Loading bar chart...</div>
+                </div>
+                <div class="status" id="status4">Initializing...</div>
+                <div class="chart-info" id="info4">Chart type: Bar chart with rectangles</div>
+            </div>
+        </div>
+        
+        <div class="log" id="log">
+            <strong>Test Log:</strong><br>
+        </div>
+    </div>
+
+    <!-- Load the libraries -->
+    <script src="lib/coordinate-mapper.js"></script>
+    <script src="lib/svg-interactive.js"></script>
+    
+    <script>
+        // Global variables for chart instances
+        let chartInstances = {};
+        
+        // Custom console logging for demo
+        const logElement = document.getElementById('log');
+        
+        function addToLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `<span style="color: #007bff;">[${timestamp}] ${message}</span><br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+        
+        // Load and initialize charts
+        function loadChart(chartId, svgFile, statusId, infoId, chartName) {
+            const container = document.getElementById(chartId);
+            const status = document.getElementById(statusId);
+            const info = document.getElementById(infoId);
+            
+            fetch(`examples/${svgFile}`)
+                .then(response => response.text())
+                .then(svgText => {
+                    container.innerHTML = svgText;
+                    status.textContent = 'SVG loaded, initializing...';
+                    status.className = 'status';
+                    
+                    // Initialize interactive features
+                    setTimeout(() => {
+                        try {
+                            const svg = container.querySelector('svg');
+                            if (!svg) throw new Error('SVG not found');
+                            
+                            const interactive = new SVGInteractive(svg, {
+                                tooltipStyle: 'enhanced', // Start with enhanced style
+                                tooltipDelay: 200,
+                                enableDetailOnDemand: true,
+                                showDataContext: true,
+                                showStatistics: true,
+                                onSelect: (selectedData, point) => {
+                                    addToLog(`Selected element in ${chartName}: ${point.type} #${point.id}`);
+                                },
+                                onHover: (point, action) => {
+                                    if (action === 'enter') {
+                                        addToLog(`Hovering over ${point.type} #${point.id} in ${chartName}`);
+                                    }
+                                }
+                            });
+                            
+                            // Store reference
+                            chartInstances[chartId] = interactive;
+                            
+                            const pointCount = interactive.getDataPoints().length;
+                            status.textContent = `✓ Ready: ${pointCount} interactive elements`;
+                            status.className = 'status success';
+                            
+                            // Update chart info
+                            const elementTypes = {};
+                            interactive.getDataPoints().forEach(point => {
+                                elementTypes[point.type] = (elementTypes[point.type] || 0) + 1;
+                            });
+                            
+                            const typeInfo = Object.entries(elementTypes)
+                                .map(([type, count]) => `${count} ${type}${count > 1 ? 's' : ''}`)
+                                .join(', ');
+                            
+                            info.textContent = `Interactive elements: ${typeInfo}`;
+                            
+                            addToLog(`${chartName} initialized: ${pointCount} interactive elements (${typeInfo})`);
+                            
+                        } catch (error) {
+                            status.textContent = `✗ Error: ${error.message}`;
+                            status.className = 'status error';
+                            addToLog(`Error initializing ${chartName}: ${error.message}`);
+                        }
+                    }, 100);
+                })
+                .catch(error => {
+                    container.innerHTML = `<div style="color: red; padding: 20px;">Error loading ${svgFile}: ${error.message}</div>`;
+                    status.textContent = `✗ Failed to load ${svgFile}`;
+                    status.className = 'status error';
+                    addToLog(`Failed to load ${chartName}: ${error.message}`);
+                });
+        }
+        
+        // Control functions
+        function clearAllSelections() {
+            Object.values(chartInstances).forEach(chart => {
+                if (chart) chart.clearSelection();
+            });
+            addToLog('Cleared all selections across all charts');
+        }
+        
+        function selectRandomPoints() {
+            Object.entries(chartInstances).forEach(([chartId, chart]) => {
+                if (chart) {
+                    const points = chart.getDataPoints();
+                    if (points.length > 0) {
+                        const numToSelect = Math.min(3, Math.floor(points.length * 0.1));
+                        const randomIds = [];
+                        for (let i = 0; i < numToSelect; i++) {
+                            const randomIndex = Math.floor(Math.random() * points.length);
+                            const id = points[randomIndex].id;
+                            if (!randomIds.includes(id)) {
+                                randomIds.push(id);
+                            }
+                        }
+                        chart.selectPoints(randomIds);
+                        addToLog(`Selected ${randomIds.length} random elements in ${chartId}`);
+                    }
+                }
+            });
+        }
+        
+        function exportAllData() {
+            const allData = {};
+            Object.entries(chartInstances).forEach(([chartId, chart]) => {
+                if (chart) {
+                    allData[chartId] = chart.exportData();
+                }
+            });
+            
+            addToLog(`Exported data from ${Object.keys(allData).length} charts`);
+            
+            // Download as JSON file
+            const blob = new Blob([JSON.stringify(allData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'all-charts-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function testAllInteractions() {
+            addToLog('Starting automated interaction test...');
+            
+            Object.entries(chartInstances).forEach(([chartId, chart]) => {
+                if (chart) {
+                    const points = chart.getDataPoints();
+                    if (points.length > 0) {
+                        // Test selection of first few points
+                        const testIds = points.slice(0, Math.min(2, points.length)).map(p => p.id);
+                        chart.selectPoints(testIds);
+                        addToLog(`Auto-selected ${testIds.length} elements in ${chartId} for testing`);
+                        
+                        // Clear after a moment
+                        setTimeout(() => {
+                            chart.clearSelection();
+                            addToLog(`Auto-cleared selections in ${chartId}`);
+                        }, 1000);
+                    }
+                }
+            });
+        }
+        
+        // Function to change tooltip style dynamically
+        function changeTooltipStyle(style) {
+            Object.values(chartInstances).forEach(chart => {
+                if (chart) {
+                    chart.options.tooltipStyle = style;
+                    
+                    // Recreate tooltip with new styling
+                    if (chart.tooltip) {
+                        chart.tooltip.remove();
+                        chart.setupTooltip();
+                    }
+                    
+                    // Rebind the default tooltip format to use the new style
+                    chart.options.tooltipFormat = chart.defaultTooltipFormat.bind(chart);
+                }
+            });
+            
+            addToLog(`Changed tooltip style to: ${style} across all charts`);
+            addToLog(`Hover over chart elements to see the new ${style} tooltip style!`);
+            
+            // Update button states
+            document.querySelectorAll('.button-group button').forEach(btn => {
+                btn.style.backgroundColor = '';
+                btn.style.transform = '';
+            });
+            
+            // Highlight active button
+            if (event && event.target) {
+                event.target.style.backgroundColor = '#4CAF50';
+                event.target.style.transform = 'scale(1.05)';
+            }
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            addToLog('Starting comprehensive chart type test...');
+            
+            // Load all chart types
+            loadChart('chart1', 'r4-1.svg', 'status1', 'info1', 'Scatter Plot 1');
+            loadChart('chart2', 'r4-2.svg', 'status2', 'info2', 'Scatter Plot 2');
+            loadChart('chart3', 'line-chart.svg', 'status3', 'info3', 'Line Chart');
+            loadChart('chart4', 'bars.svg', 'status4', 'info4', 'Bar Chart');
+        });
+    </script>
+</body>
+</html>

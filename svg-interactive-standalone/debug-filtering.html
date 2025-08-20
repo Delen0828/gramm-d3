@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Polyline Filtering</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .log {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            margin: 0 0 10px 0;
+            color: #495057;
+        }
+        
+        .stat-card .number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Polyline Filtering</h1>
+        <p>Detailed analysis of which polylines are being filtered as background vs interactive elements.</p>
+        
+        <button class="btn" onclick="debugFiltering()">🔍 Debug Line Chart Filtering</button>
+        <button class="btn" onclick="clearLog()">🗑️ Clear Log</button>
+        
+        <div class="stats" id="stats">
+            <div class="stat-card">
+                <h3>Total Polylines</h3>
+                <div class="number" id="total-polylines">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Grid Lines (Filtered)</h3>
+                <div class="number" id="grid-lines">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Data Series (Interactive)</h3>
+                <div class="number" id="data-series">-</div>
+            </div>
+            <div class="stat-card">
+                <h3>Final Interactive Count</h3>
+                <div class="number" id="interactive-count">-</div>
+            </div>
+        </div>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <!-- Load the libraries -->
+    <script src="lib/coordinate-mapper.js"></script>
+    <script src="lib/svg-interactive.js"></script>
+    
+    <script>
+        const logElement = document.getElementById('log');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            logElement.textContent = '';
+            log('Log cleared');
+        }
+        
+        async function debugFiltering() {
+            try {
+                log('🔍 Loading line chart for detailed filtering analysis...');
+                
+                // Fetch the line chart
+                const response = await fetch('examples/line-chart.svg');
+                const svgText = await response.text();
+                
+                // Create a temporary container
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = svgText;
+                const svg = tempDiv.querySelector('svg');
+                
+                if (!svg) {
+                    throw new Error('SVG element not found');
+                }
+                
+                log('✅ SVG loaded successfully');
+                
+                // Get all polylines
+                const polylines = svg.querySelectorAll('polyline');
+                log(`📊 Found ${polylines.length} total polylines`);
+                
+                let gridCount = 0;
+                let dataCount = 0;
+                let filteredElements = [];
+                let interactiveElements = [];
+                
+                // Test the filtering logic manually
+                polylines.forEach((polyline, index) => {
+                    const style = window.getComputedStyle(polyline);
+                    const stroke = style.stroke;
+                    const strokeWidth = style.strokeWidth;
+                    const fill = style.fill;
+                    
+                    const dataId = polyline.getAttribute('data-id');
+                    const title = polyline.getAttribute('title');
+                    const points = polyline.getAttribute('points');
+                    
+                    log(`\n--- Polyline ${index} ---`);
+                    log(`Stroke: ${stroke}`);
+                    log(`StrokeWidth: ${strokeWidth}`);
+                    log(`Fill: ${fill}`);
+                    log(`data-id: ${dataId}`);
+                    log(`title: ${title}`);
+                    log(`Points: ${points ? points.substring(0, 50) + '...' : 'none'}`);
+                    
+                    // Apply the same logic as isBackgroundElement
+                    let isBackground = false;
+                    let reason = '';
+                    
+                    // Check for white fills first
+                    if (fill === 'rgb(255, 255, 255)' || fill === 'white' || fill === 'none') {
+                        // This is normal for polylines, continue checking
+                    }
+                    
+                    // Check for grid line stroke colors
+                    if (stroke === 'rgb(235, 235, 235)' || stroke === '#EBEBEB' || stroke === '#b0b0b0' || 
+                        stroke === 'rgb(176, 176, 176)' || stroke.includes('235, 235, 235') || stroke.includes('176, 176, 176')) {
+                        isBackground = true;
+                        reason = 'Grid stroke color';
+                    }
+                    
+                    // Check for data attributes (should override background detection)
+                    if (polyline.hasAttribute('data-id') || polyline.hasAttribute('title')) {
+                        isBackground = false;
+                        reason = 'Has data attributes';
+                    }
+                    
+                    // For polylines, additional grid checks
+                    if (!isBackground && polyline.tagName.toLowerCase() === 'polyline') {
+                        const strokeWidthNum = parseFloat(strokeWidth);
+                        if (strokeWidthNum <= 1.2 && (stroke.includes('235, 235, 235') || stroke.includes('176, 176, 176'))) {
+                            isBackground = true;
+                            reason = 'Thin stroke with grid color';
+                        }
+                        
+                        // Check for straight lines
+                        if (points) {
+                            const coords = points.trim().split(/\s+|,/);
+                            if (coords.length === 4) {
+                                const x1 = parseFloat(coords[0]);
+                                const y1 = parseFloat(coords[1]);
+                                const x2 = parseFloat(coords[2]);
+                                const y2 = parseFloat(coords[3]);
+                                
+                                if (Math.abs(x1 - x2) < 1 || Math.abs(y1 - y2) < 1) {
+                                    isBackground = true;
+                                    reason = 'Straight horizontal/vertical line';
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (isBackground) {
+                        gridCount++;
+                        filteredElements.push(index);
+                        log(`❌ FILTERED as background: ${reason}`);
+                    } else {
+                        dataCount++;
+                        interactiveElements.push(index);
+                        log(`✅ KEPT as interactive: ${reason || 'Passed all background checks'}`);
+                    }
+                });
+                
+                log(`\n📊 Filtering Results:`);
+                log(`Total polylines: ${polylines.length}`);
+                log(`Grid lines (filtered): ${gridCount}`);
+                log(`Data series (kept): ${dataCount}`);
+                log(`Filtered indices: [${filteredElements.join(', ')}]`);
+                log(`Interactive indices: [${interactiveElements.join(', ')}]`);
+                
+                // Update stats
+                document.getElementById('total-polylines').textContent = polylines.length;
+                document.getElementById('grid-lines').textContent = gridCount;
+                document.getElementById('data-series').textContent = dataCount;
+                
+                // Now test the actual SVGInteractive class
+                log(`\n🚀 Testing actual SVGInteractive implementation...`);
+                
+                const interactive = new SVGInteractive(svg, {
+                    tooltipStyle: 'basic',
+                    onSelect: (selectedData, point) => {
+                        log(`Selected: ${point.type} #${point.id}`);
+                    }
+                });
+                
+                const actualCount = interactive.getDataPoints().length;
+                log(`🎯 SVGInteractive detected ${actualCount} interactive elements`);
+                
+                document.getElementById('interactive-count').textContent = actualCount;
+                
+                if (actualCount === dataCount) {
+                    log(`✅ SUCCESS: Filtering logic matches implementation!`);
+                } else {
+                    log(`❌ MISMATCH: Expected ${dataCount}, got ${actualCount}`);
+                }
+                
+                // Show element type breakdown
+                const elementTypes = {};
+                interactive.getDataPoints().forEach(point => {
+                    elementTypes[point.type] = (elementTypes[point.type] || 0) + 1;
+                });
+                
+                log(`📊 Interactive element types:`);
+                Object.entries(elementTypes).forEach(([type, count]) => {
+                    log(`  ${type}: ${count}`);
+                });
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                console.error(error);
+            }
+        }
+        
+        // Initialize
+        log('🎯 Debug filtering tool ready');
+    </script>
+</body>
+</html>

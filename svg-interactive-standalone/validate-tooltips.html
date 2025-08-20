@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Interactive - Tooltip Validation</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 20px;
+            background: #f8f9fa;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .test-section h3 {
+            margin: 0 0 10px 0;
+            color: #007bff;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            font-family: inherit;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+        
+        .btn.success {
+            background: #28a745;
+        }
+        
+        .btn.danger {
+            background: #dc3545;
+        }
+        
+        .log {
+            background: #000;
+            color: #00ff00;
+            padding: 15px;
+            border-radius: 4px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+        }
+        
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .result-card {
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .result-card.success {
+            border-color: #28a745;
+        }
+        
+        .result-card.error {
+            border-color: #dc3545;
+        }
+        
+        .result-card h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+        }
+        
+        .result-card .stats {
+            font-size: 11px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 SVG Interactive - Tooltip Validation</h1>
+        
+        <div class="test-section">
+            <h3>Automated Testing</h3>
+            <p>Click the button below to run comprehensive tests on all chart types and tooltip styles.</p>
+            <button class="btn" onclick="runComprehensiveTests()">🚀 Run All Tests</button>
+            <button class="btn" onclick="testIndividualCharts()">📊 Test Individual Charts</button>
+            <button class="btn" onclick="validateTooltipStyles()">📋 Validate Tooltips</button>
+            <button class="btn" onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test Results</h3>
+            <div class="results" id="results">
+                <div class="result-card">
+                    <h4>Waiting for tests...</h4>
+                    <div class="stats">Click "Run All Tests" to begin</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Test Log</h3>
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+
+    <!-- Load the libraries -->
+    <script src="lib/coordinate-mapper.js"></script>
+    <script src="lib/svg-interactive.js"></script>
+    <script src="test-chart-types.js"></script>
+    
+    <script>
+        // Enhanced logging
+        const logElement = document.getElementById('log');
+        const resultsElement = document.getElementById('results');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: '#00ff00',
+                success: '#00ff00',
+                error: '#ff4444',
+                warning: '#ffaa00'
+            };
+            
+            logElement.innerHTML += `<span style="color: ${colors[type] || '#00ff00'}">[${timestamp}] ${message}</span><br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            logElement.innerHTML = '';
+            log('Log cleared', 'info');
+        }
+        
+        function updateResults(results) {
+            resultsElement.innerHTML = '';
+            
+            results.forEach(result => {
+                const card = document.createElement('div');
+                card.className = `result-card ${result.success ? 'success' : 'error'}`;
+                
+                card.innerHTML = `
+                    <h4>${result.success ? '✅' : '❌'} ${result.chartName}</h4>
+                    <div class="stats">
+                        ${result.success ? 
+                            `Elements: ${result.elementCount}<br>
+                             Types: ${Object.keys(result.elementTypes || {}).join(', ')}<br>
+                             Axis: X=${(result.axisInfo?.xAxisTicks?.length || 0)}, Y=${(result.axisInfo?.yAxisTicks?.length || 0)}` :
+                            `Error: ${result.error}`
+                        }
+                    </div>
+                `;
+                
+                resultsElement.appendChild(card);
+            });
+        }
+        
+        async function runComprehensiveTests() {
+            log('🎯 Starting comprehensive chart type tests...', 'info');
+            clearResults();
+            
+            try {
+                const results = await window.chartTypeTests.runAllTests();
+                updateResults(results);
+                
+                const successCount = results.filter(r => r.success).length;
+                log(`✅ Tests completed: ${successCount}/${results.length} charts successful`, 'success');
+                
+                // Summary statistics
+                const totalElements = results.reduce((sum, r) => sum + (r.elementCount || 0), 0);
+                log(`📊 Total interactive elements discovered: ${totalElements}`, 'info');
+                
+            } catch (error) {
+                log(`❌ Test execution failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testIndividualCharts() {
+            log('📊 Testing individual chart types...', 'info');
+            
+            const charts = [
+                { file: 'r4-1.svg', name: 'Scatter Plot 1' },
+                { file: 'r4-2.svg', name: 'Scatter Plot 2' },
+                { file: 'line-chart.svg', name: 'Line Chart' },
+                { file: 'bars.svg', name: 'Bar Chart' }
+            ];
+            
+            const results = [];
+            
+            for (const chart of charts) {
+                log(`Testing ${chart.name}...`, 'info');
+                const result = await window.chartTypeTests.loadAndTestChart(chart);
+                results.push(result);
+                
+                if (result.success) {
+                    log(`✅ ${chart.name}: ${result.elementCount} elements`, 'success');
+                } else {
+                    log(`❌ ${chart.name}: ${result.error}`, 'error');
+                }
+            }
+            
+            updateResults(results);
+        }
+        
+        function validateTooltipStyles() {
+            log('📋 Validating tooltip styles...', 'info');
+            
+            const styles = ['basic', 'enhanced', 'detailed'];
+            const mockPoint = {
+                id: 0,
+                type: 'circle',
+                dataX: 12.34,
+                dataY: 56.78,
+                svgX: 100,
+                svgY: 200
+            };
+            
+            const mockContext = {
+                stats: { x: { min: 0, max: 100, mean: 50 }, y: { min: 0, max: 100, mean: 50 } },
+                percentiles: { x: 75, y: 60 },
+                neighbors: [],
+                totalPoints: 100,
+                selectedCount: 0
+            };
+            
+            // Create temporary SVG for testing
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            circle.setAttribute('cx', '100');
+            circle.setAttribute('cy', '200');
+            circle.setAttribute('r', '5');
+            svg.appendChild(circle);
+            
+            const interactive = new SVGInteractive(svg);
+            
+            styles.forEach(style => {
+                interactive.options.tooltipStyle = style;
+                const content = interactive.defaultTooltipFormat(mockPoint, mockContext);
+                
+                log(`📋 ${style} tooltip: ${content.length} characters`, 'info');
+                
+                // Validate content
+                if (content.includes(mockPoint.dataX.toString())) {
+                    log(`  ✅ Contains data values`, 'success');
+                } else {
+                    log(`  ❌ Missing data values`, 'error');
+                }
+                
+                if (style === 'detailed' && content.includes('percentile')) {
+                    log(`  ✅ Contains statistical context`, 'success');
+                } else if (style === 'basic') {
+                    log(`  ✅ Basic format validated`, 'success');
+                }
+            });
+            
+            log('📋 Tooltip validation completed', 'success');
+        }
+        
+        function clearResults() {
+            resultsElement.innerHTML = `
+                <div class="result-card">
+                    <h4>🔄 Running tests...</h4>
+                    <div class="stats">Please wait while tests execute</div>
+                </div>
+            `;
+        }
+        
+        // Initialize
+        log('🎯 Tooltip validation system ready', 'info');
+        log('Available chart types: Scatter plots, Line charts, Bar charts', 'info');
+        log('Available tooltip styles: Basic, Enhanced, Detailed', 'info');
+    </script>
+</body>
+</html>

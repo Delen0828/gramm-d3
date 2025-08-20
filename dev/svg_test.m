@@ -1,0 +1,501 @@
+%% SVG Export Test Script
+% This script combines geometric objects and statistical transformations tests
+% from vega_test.m and phase2_stat_test.m but exports to SVG format instead
+
+clear; clc; close all;
+
+% Ensure output directory exists
+output_dir = './svg_output';
+if ~exist(output_dir, 'dir')
+    mkdir(output_dir);
+end
+
+fprintf('=== Testing SVG Export for Geometric Objects and Statistical Transformations ===\n\n');
+
+% Store SVG file names for HTML generation
+svg_files = {};
+test_titles = {};
+
+%% Geometric Objects Tests (from vega_test.m)
+
+%% Test 1: geom_point - Basic Scatter Plot
+fprintf('Test 1: geom_point (Basic Scatter Plot)\n');
+try
+    figure('Visible', 'off'); % Create invisible figure for export
+    x1 = randn(50, 1);
+    y1 = randn(50, 1);
+    
+    g1 = gramm('x', x1, 'y', y1);
+    g1.geom_point();
+    g1.set_title('Basic Scatter Plot');
+    g1.set_names('x', 'X Values', 'y', 'Y Values');
+    g1.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_geom_point.svg');
+    g1.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_geom_point.svg';
+    test_titles{end+1} = 'Basic Scatter Plot';
+    fprintf('✓ geom_point test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ geom_point test failed: %s\n\n', ME.message);
+end
+
+%% Test 2: geom_point with Color Groups
+fprintf('Test 2: geom_point with Color Groups\n');
+try
+    figure('Visible', 'off');
+    x2 = randn(60, 1);
+    y2 = randn(60, 1);
+    colors = repmat([4, 6, 8], 1, 20);
+    
+    g2 = gramm('x', x2, 'y', y2, 'color', colors);
+    g2.geom_point();
+    g2.set_title('Scatter Plot with Color Groups');
+    g2.set_names('x', 'X Values', 'y', 'Y Values', 'color', 'Group');
+    g2.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_geom_point_colors.svg');
+    g2.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_geom_point_colors.svg';
+    test_titles{end+1} = 'Scatter Plot with Color Groups';
+    fprintf('✓ geom_point with colors test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ geom_point with colors test failed: %s\n\n', ME.message);
+end
+
+%% Test 3: geom_line - Line Chart
+fprintf('Test 3: geom_line (Line Chart)\n');
+try
+    figure('Visible', 'off');
+    x3 = 1:20;
+    y3 = cumsum(randn(1, 20));
+    
+    g3 = gramm('x', x3, 'y', y3);
+    g3.geom_line();
+    g3.set_title('Basic Line Chart');
+    g3.set_names('x', 'Time', 'y', 'Value');
+    g3.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_geom_line.svg');
+    g3.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_geom_line.svg';
+    test_titles{end+1} = 'Basic Line Chart';
+    fprintf('✓ geom_line test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ geom_line test failed: %s\n\n', ME.message);
+end
+
+%% Test 4: geom_line with Multiple Series
+fprintf('Test 4: geom_line with Multiple Series\n');
+try
+    figure('Visible', 'off');
+    x4 = repmat(1:15, 1, 3);
+    y4 = [cumsum(randn(1, 15)), cumsum(randn(1, 15)) + 2, cumsum(randn(1, 15)) - 1];
+    groups = repmat([4, 6, 8], 1, 15);
+    
+    g4 = gramm('x', x4, 'y', y4, 'color', groups);
+    g4.geom_line();
+    g4.set_title('Multi-Series Line Chart');
+    g4.set_names('x', 'Time', 'y', 'Value', 'color', 'Series');
+    g4.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_geom_line_multi.svg');
+    g4.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_geom_line_multi.svg';
+    test_titles{end+1} = 'Multi-Series Line Chart';
+    fprintf('✓ geom_line multi-series test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ geom_line multi-series test failed: %s\n\n', ME.message);
+end
+
+%% Test 5: geom_bar - Bar Chart with Categorical Data
+fprintf('Test 5: geom_bar with Categorical Data\n');
+try
+    figure('Visible', 'off');
+    categories = {'A', 'B', 'C', 'D', 'E'};
+    values = [23, 45, 56, 78, 32];
+    
+    g5 = gramm('x', categories, 'y', values);
+    g5.geom_bar();
+    g5.set_title('Categorical Bar Chart');
+    g5.set_names('x', 'Category', 'y', 'Count');
+    g5.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_geom_bar_categorical.svg');
+    g5.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_geom_bar_categorical.svg';
+    test_titles{end+1} = 'Categorical Bar Chart';
+    fprintf('✓ geom_bar categorical test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ geom_bar categorical test failed: %s\n\n', ME.message);
+end
+
+%% Test 6: geom_bar with Numeric Data and Groups
+fprintf('Test 6: geom_bar with Numeric Data and Groups\n');
+try
+    figure('Visible', 'off');
+    x_bars = repmat([1, 2, 3, 4], 1, 3);
+    y_bars = [10, 15, 12, 18, 8, 20, 14, 22, 16, 25, 11, 19];
+    bar_groups = repmat([4, 6, 8], 1, 4);
+    
+    g6 = gramm('x', x_bars, 'y', y_bars, 'color', bar_groups);
+    g6.geom_bar();
+    g6.set_title('Grouped Bar Chart');
+    g6.set_names('x', 'Position', 'y', 'Value', 'color', 'Group');
+    g6.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_geom_bar_groups.svg');
+    g6.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_geom_bar_groups.svg';
+    test_titles{end+1} = 'Grouped Bar Chart';
+    fprintf('✓ geom_bar with groups test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ geom_bar with groups test failed: %s\n\n', ME.message);
+end
+
+%% Test 7: Combined geom_point and geom_line
+fprintf('Test 7: Combined geom_point and geom_line\n');
+try
+    figure('Visible', 'off');
+    x7 = 1:10;
+    y7 = x7 + randn(1, 10);
+    
+    g7 = gramm('x', x7, 'y', y7);
+    g7.geom_point();
+    g7.geom_line();
+    g7.set_title('Combined Point and Line');
+    g7.set_names('x', 'X Values', 'y', 'Y Values');
+    g7.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_combined_point_line.svg');
+    g7.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_combined_point_line.svg';
+    test_titles{end+1} = 'Combined Point and Line';
+    fprintf('✓ Combined geom test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ Combined geom test failed: %s\n\n', ME.message);
+end
+
+%% Statistical Transformations Tests (from phase2_stat_test.m)
+
+%% Test 8: stat_glm - Linear Regression
+fprintf('Test 8: stat_glm (Linear Regression)\n');
+try
+    figure('Visible', 'off');
+    x8 = 1:0.5:10;
+    y8 = 2*x8 + 3 + randn(size(x8))*2;
+    
+    g8 = gramm('x', x8, 'y', y8);
+    g8.stat_glm('distribution', 'normal');
+    g8.set_title('Linear Regression with GLM');
+    g8.set_names('x', 'X Values', 'y', 'Y Values');
+    g8.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_stat_glm.svg');
+    g8.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_stat_glm.svg';
+    test_titles{end+1} = 'Linear Regression with GLM';
+    fprintf('✓ stat_glm test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ stat_glm test failed: %s\n\n', ME.message);
+end
+
+%% Test 9: stat_glm with Color Groups
+fprintf('Test 9: stat_glm with Color Groups\n');
+try
+    figure('Visible', 'off');
+    x9 = repmat(1:15, 1, 3);
+    y9 = [];
+    groups = [];
+    group_names = {'Group A', 'Group B', 'Group C'};
+    slopes = [1.5, 2.5, 0.8];
+    
+    for i = 1:3
+        y_group = slopes(i)*x9(1:15) + randn(1, 15)*1.5 + i*2;
+        y9 = [y9, y_group];
+        groups = [groups, repmat(group_names(i), 1, 15)];
+    end
+    
+    g9 = gramm('x', x9, 'y', y9, 'color', groups);
+    g9.stat_glm();
+    g9.set_title('Multi-Group Linear Regression');
+    g9.set_names('x', 'X Values', 'y', 'Y Values', 'color', 'Groups');
+    g9.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_stat_glm_groups.svg');
+    g9.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_stat_glm_groups.svg';
+    test_titles{end+1} = 'Multi-Group Linear Regression';
+    fprintf('✓ stat_glm with groups test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ stat_glm with groups test failed: %s\n\n', ME.message);
+end
+
+%% Test 10: stat_smooth - Smoothed Estimates
+fprintf('Test 10: stat_smooth (Smoothing)\n');
+try
+    figure('Visible', 'off');
+    x10 = linspace(0, 4*pi, 50);
+    y10 = sin(x10) + 0.3*randn(size(x10));
+    
+    g10 = gramm('x', x10, 'y', y10);
+    g10.stat_smooth();
+    g10.set_title('Smoothed Curve');
+    g10.set_names('x', 'X Values', 'y', 'Smoothed Y');
+    g10.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_stat_smooth.svg');
+    g10.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_stat_smooth.svg';
+    test_titles{end+1} = 'Smoothed Curve';
+    fprintf('✓ stat_smooth test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ stat_smooth test failed: %s\n\n', ME.message);
+end
+
+%% Test 11: stat_bin - Histogram
+fprintf('Test 11: stat_bin (Histogram)\n');
+try
+    figure('Visible', 'off');
+    x11 = [randn(200, 1)*2; randn(150, 1)*1.5 + 4];
+    
+    g11 = gramm('x', x11);
+    g11.stat_bin('nbins', 25, 'geom', 'bar');
+    g11.set_title('Histogram with stat_bin');
+    g11.set_names('x', 'Values', 'y', 'Count');
+    g11.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_stat_bin.svg');
+    g11.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_stat_bin.svg';
+    test_titles{end+1} = 'Histogram with stat_bin';
+    fprintf('✓ stat_bin test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ stat_bin test failed: %s\n\n', ME.message);
+end
+
+%% Test 12: stat_bin with Color Groups
+fprintf('Test 12: stat_bin with Color Groups\n');
+try
+    figure('Visible', 'off');
+    n_per_group = 150;
+    x12 = [randn(n_per_group, 1)*1.5 + 1; randn(n_per_group, 1)*2 + 4; randn(n_per_group, 1)*1.2 + 7];
+    groups12 = [repmat({'Normal'}, n_per_group, 1); repmat({'Shifted'}, n_per_group, 1); repmat({'Narrow'}, n_per_group, 1)];
+    
+    g12 = gramm('x', x12, 'color', groups12);
+    g12.stat_bin('nbins', 20, 'geom', 'overlaid_bar');
+    g12.set_title('Grouped Histogram');
+    g12.set_names('x', 'Values', 'y', 'Count', 'color', 'Distribution');
+    g12.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_stat_bin_groups.svg');
+    g12.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_stat_bin_groups.svg';
+    test_titles{end+1} = 'Grouped Histogram';
+    fprintf('✓ stat_bin with groups test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ stat_bin with groups test failed: %s\n\n', ME.message);
+end
+
+%% Test 13: stat_summary - Statistical Summaries
+fprintf('Test 13: stat_summary (Statistical Summaries)\n');
+try
+    figure('Visible', 'off');
+    categories = repmat({'Low', 'Medium', 'High'}, 1, 25);
+    values13 = [randn(1, 25)*2 + 5, randn(1, 25)*3 + 10, randn(1, 25)*2.5 + 15];
+    
+    g13 = gramm('x', categories, 'y', values13);
+    g13.stat_summary('geom', {'bar', 'black_errorbar'});
+    g13.set_title('Statistical Summary with Error Bars');
+    g13.set_names('x', 'Category', 'y', 'Mean Value');
+    g13.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_stat_summary.svg');
+    g13.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_stat_summary.svg';
+    test_titles{end+1} = 'Statistical Summary with Error Bars';
+    fprintf('✓ stat_summary test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ stat_summary test failed: %s\n\n', ME.message);
+end
+
+%% Test 14: stat_density - Kernel Density
+fprintf('Test 14: stat_density (Kernel Density)\n');
+try
+    figure('Visible', 'off');
+    x14 = [randn(200, 1)*1.5; randn(150, 1)*2 + 5];
+    
+    g14 = gramm('x', x14);
+    g14.stat_density();
+    g14.set_title('Kernel Density Estimation');
+    g14.set_names('x', 'Values', 'y', 'Density');
+    g14.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_stat_density.svg');
+    g14.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_stat_density.svg';
+    test_titles{end+1} = 'Kernel Density Estimation';
+    fprintf('✓ stat_density test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ stat_density test failed: %s\n\n', ME.message);
+end
+
+%% Test 15: stat_violin - Violin Plots
+fprintf('Test 15: stat_violin (Violin Plots)\n');
+try
+    figure('Visible', 'off');
+    categories15 = repmat({'A', 'B', 'C'}, 1, 50);
+    values15 = [];
+    for i = 1:3
+        if i == 1
+            vals = randn(1, 50)*2 + 5;
+        elseif i == 2
+            vals = [randn(1, 25)*1 + 3, randn(1, 25)*1 + 7];
+        else
+            vals = randn(1, 50)*3 + 10;
+        end
+        values15 = [values15, vals];
+    end
+    
+    g15 = gramm('x', categories15, 'y', values15);
+    g15.stat_violin();
+    g15.set_title('Violin Plots');
+    g15.set_names('x', 'Group', 'y', 'Values');
+    g15.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_stat_violin.svg');
+    g15.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_stat_violin.svg';
+    test_titles{end+1} = 'Violin Plots';
+    fprintf('✓ stat_violin test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ stat_violin test failed: %s\n\n', ME.message);
+end
+
+%% Test 16: stat_boxplot - Box Plots
+fprintf('Test 16: stat_boxplot (Box Plots)\n');
+try
+    figure('Visible', 'off');
+    categories16 = repmat({'Treatment A', 'Treatment B', 'Control'}, 1, 30);
+    values16 = [randn(1, 30)*2 + 8, randn(1, 30)*3 + 12, randn(1, 30)*1.5 + 6];
+    
+    g16 = gramm('x', categories16, 'y', values16);
+    g16.stat_boxplot();
+    g16.set_title('Box and Whisker Plots');
+    g16.set_names('x', 'Treatment', 'y', 'Response');
+    g16.draw();
+    
+    svg_filename = fullfile(output_dir, 'test_stat_boxplot.svg');
+    g16.export('file_name', svg_filename);
+    close all;
+    
+    svg_files{end+1} = 'test_stat_boxplot.svg';
+    test_titles{end+1} = 'Box and Whisker Plots';
+    fprintf('✓ stat_boxplot test completed successfully\n\n');
+catch ME
+    close all;
+    fprintf('✗ stat_boxplot test failed: %s\n\n', ME.message);
+end
+
+%% Generate HTML Index Page
+fprintf('=== Generating HTML Index Page ===\n');
+generateSVGTestIndex(output_dir, svg_files, test_titles);
+
+% Clean up
+close all;
+
+fprintf('=== SVG Test Script Completed ===\n');
+fprintf('Generated %d SVG files with corresponding HTML index\n', length(svg_files));
+fprintf('Open svg_output/index.html in your browser to view all results!\n\n');
+
+%% Helper Function to Generate HTML Index with Interactive Comparison
+function generateSVGTestIndex(output_dir, svg_files, test_titles)
+    % Create HTML index page with static vs interactive comparison
+    index_file = fullfile(output_dir, 'index.html');
+    
+    % Read the template HTML content that we created
+    template_path = fullfile(output_dir, 'index.html');
+    
+    % Since we already wrote the complete HTML file, we just need to update
+    % the JavaScript array with the actual SVG files and titles
+    
+    % Generate JavaScript chart data array
+    js_chart_data = 'const chartData = [\n';
+    for i = 1:length(svg_files)
+        svg_file = svg_files{i};
+        title = test_titles{i};
+        js_chart_data = [js_chart_data sprintf('            { file: ''%s'', title: ''%s'' }', svg_file, title)];
+        if i < length(svg_files)
+            js_chart_data = [js_chart_data ','];
+        end
+        js_chart_data = [js_chart_data sprintf('\n')];
+    end
+    js_chart_data = [js_chart_data '        ];'];
+    
+    % Read the current HTML content
+    fileID = fopen(index_file, 'r');
+    html_content = fread(fileID, '*char')';
+    fclose(fileID);
+    
+    % Replace the placeholder chart data with actual data
+    old_pattern = 'const chartData = \[[\s\S]*?\];';
+    html_content = regexprep(html_content, old_pattern, js_chart_data);
+    
+    % Write updated HTML file
+    fileID = fopen(index_file, 'w');
+    fprintf(fileID, '%s', html_content);
+    fclose(fileID);
+    
+    fprintf('✓ Interactive HTML index page generated: %s\n', index_file);
+    fprintf('  Features:\n');
+    fprintf('    - Side-by-side static vs interactive comparison\n');
+    fprintf('    - %d charts with hover tooltips and click selection\n', length(svg_files));
+    fprintf('    - Global controls for selection, export, and debug\n');
+    fprintf('    - Responsive layout with loading indicators\n');
+    fprintf('  Open in browser to test interactive features!\n\n');
+end

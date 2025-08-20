@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Polyline Improvements</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container {
+            margin: 20px 0;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .chart-container svg {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .test-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .result.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .result.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Polyline Improvements Test</h1>
+        <p>Testing the two specific improvements for line chart interaction:</p>
+        
+        <div class="test-info">
+            <h3>Test Requirements:</h3>
+            <ol>
+                <li><strong>No Orange Shading:</strong> When selecting polylines, they should NOT get orange background/fill</li>
+                <li><strong>Legend Tooltips:</strong> Polyline tooltips should show legend information instead of x-y coordinates</li>
+            </ol>
+        </div>
+        
+        <button class="btn" onclick="runTest()">🔍 Run Test</button>
+        <button class="btn" onclick="clearResults()">🗑️ Clear Results</button>
+        
+        <div id="results"></div>
+        
+        <div class="chart-container" id="chart-container">
+            <p>Click "Run Test" to load and analyze the line chart.</p>
+        </div>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <!-- Load the libraries -->
+    <script src="lib/coordinate-mapper.js"></script>
+    <script src="lib/svg-interactive.js"></script>
+    
+    <script>
+        const logElement = document.getElementById('log');
+        const resultsElement = document.getElementById('results');
+        const chartContainer = document.getElementById('chart-container');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearResults() {
+            resultsElement.innerHTML = '';
+            logElement.textContent = '';
+            chartContainer.innerHTML = '<p>Click "Run Test" to load and analyze the line chart.</p>';
+        }
+        
+        function addResult(test, passed, details) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `
+                <strong>${passed ? '✅' : '❌'} ${test}</strong><br>
+                <small>${details}</small>
+            `;
+            resultsElement.appendChild(resultDiv);
+        }
+        
+        async function runTest() {
+            try {
+                clearResults();
+                log('🔍 Starting polyline improvements test...');
+                
+                // Load the line chart
+                const response = await fetch('examples/line-chart.svg');
+                const svgText = await response.text();
+                chartContainer.innerHTML = svgText;
+                
+                const svg = chartContainer.querySelector('svg');
+                if (!svg) {
+                    throw new Error('SVG element not found');
+                }
+                
+                log('✅ Line chart loaded successfully');
+                
+                // Initialize interactive features
+                const interactive = new SVGInteractive(svg, {
+                    tooltipStyle: 'enhanced',
+                    enableDetailOnDemand: true,
+                    onSelect: (selectedData, point) => {
+                        log(`Selected: ${point.type} #${point.id}`);
+                        
+                        // Test 1: Check for orange shading
+                        if (point.type === 'polyline') {
+                            testOrangeShading(point);
+                        }
+                    },
+                    onHover: (point, action) => {
+                        if (action === 'enter' && point.type === 'polyline') {
+                            // Test 2: Check tooltip content
+                            setTimeout(() => testTooltipContent(point), 100);
+                        }
+                    }
+                });
+                
+                const dataPoints = interactive.getDataPoints();
+                const polylineCount = dataPoints.filter(p => p.type === 'polyline').length;
+                
+                log(`🎯 Found ${polylineCount} interactive polylines`);
+                
+                if (polylineCount === 0) {
+                    addResult('Polyline Detection', false, 'No polylines detected as interactive elements');
+                    return;
+                }
+                
+                addResult('Polyline Detection', true, `${polylineCount} polylines detected correctly`);
+                
+                // Automatically test the first polyline
+                const firstPolyline = dataPoints.find(p => p.type === 'polyline');
+                if (firstPolyline) {
+                    log('🔍 Auto-testing first polyline...');
+                    
+                    // Simulate selection
+                    interactive.selectElement(firstPolyline.element, firstPolyline);
+                    
+                    // Simulate hover for tooltip
+                    const event = new MouseEvent('mouseenter', { bubbles: true });
+                    firstPolyline.element.dispatchEvent(event);
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`);
+                addResult('Test Execution', false, error.message);
+            }
+        }
+        
+        function testOrangeShading(point) {
+            const element = point.element;
+            const computedStyle = window.getComputedStyle(element);
+            
+            // Check if element has orange coloring
+            const fill = computedStyle.fill;
+            const stroke = computedStyle.stroke;
+            const backgroundColor = computedStyle.backgroundColor;
+            
+            log(`Checking styling: fill=${fill}, stroke=${stroke}, backgroundColor=${backgroundColor}`);
+            
+            const hasOrangeShading = 
+                fill.includes('orange') || fill.includes('#ff') || fill.includes('255') ||
+                stroke.includes('orange') || stroke.includes('#ff') ||
+                backgroundColor.includes('orange');
+            
+            if (hasOrangeShading) {
+                addResult('No Orange Shading', false, 'Polyline still has orange coloring when selected');
+                log('❌ Found orange shading on selected polyline');
+            } else {
+                addResult('No Orange Shading', true, 'Polyline selection does not use orange coloring');
+                log('✅ No orange shading detected on selected polyline');
+            }
+        }
+        
+        function testTooltipContent(point) {
+            // Look for tooltip in DOM
+            const tooltip = document.querySelector('.svg-tooltip');
+            
+            if (!tooltip) {
+                addResult('Legend Tooltips', false, 'No tooltip found');
+                log('❌ No tooltip element found');
+                return;
+            }
+            
+            const tooltipText = tooltip.textContent || tooltip.innerHTML;
+            log(`Tooltip content: ${tooltipText}`);
+            
+            // Check if tooltip contains legend info instead of coordinates
+            const hasCoordinates = /\(\s*[\d\.-]+\s*,\s*[\d\.-]+\s*\)/.test(tooltipText);
+            const hasLegendInfo = 
+                tooltipText.includes('data-id') || 
+                tooltipText.includes('title') ||
+                tooltipText.includes('Time series') ||
+                tooltipText.includes('Author') ||
+                point.element.getAttribute('data-id') && tooltipText.includes(point.element.getAttribute('data-id')) ||
+                point.element.getAttribute('title') && tooltipText.includes(point.element.getAttribute('title'));
+            
+            if (hasCoordinates && !hasLegendInfo) {
+                addResult('Legend Tooltips', false, 'Tooltip shows coordinates instead of legend information');
+                log('❌ Tooltip contains coordinate data instead of legend info');
+            } else if (hasLegendInfo) {
+                addResult('Legend Tooltips', true, 'Tooltip shows legend information');
+                log('✅ Tooltip contains legend information instead of coordinates');
+            } else {
+                addResult('Legend Tooltips', false, 'Tooltip content unclear - neither coordinates nor clear legend info');
+                log('⚠️ Tooltip content is unclear');
+            }
+        }
+        
+        // Initialize
+        log('🎯 Polyline improvements test ready');
+    </script>
+</body>
+</html>

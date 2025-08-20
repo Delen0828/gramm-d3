@@ -214,6 +214,7 @@ try
     g10.set_title('Q-Q Plot for Normality');
     g10.set_names('x', 'Theoretical Quantiles', 'y', 'Sample Quantiles');
     g10.draw();
+    
     export_vega(g10, 'file_name', 'test_stat_qq', 'export_path', output_dir);
     fprintf('✓ stat_qq test completed successfully\n\n');
 catch ME
@@ -233,7 +234,7 @@ try
     g11.set_title('Polynomial Fitting (GLM Alternative)');
     g11.set_names('x', 'X Values', 'y', 'Y Values');
     g11.draw();
-    g11.export();
+    
     export_vega(g11, 'file_name', 'test_stat_fit', 'export_path', output_dir);
     fprintf('✓ stat_fit (GLM alternative) test completed successfully\n\n');
 catch ME

@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polyline Support Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container {
+            margin: 20px 0;
+            text-align: center;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .chart-container svg {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Polyline Support Test</h1>
+        <p>Testing if line chart polylines are now detected as interactive elements.</p>
+        
+        <div class="controls">
+            <button class="btn" onclick="testLineChart()">🔍 Test Line Chart</button>
+            <button class="btn" onclick="clearLog()">🗑️ Clear Log</button>
+        </div>
+        
+        <div class="chart-container" id="chart-container">
+            <p>Click "Test Line Chart" to load and analyze the line chart.</p>
+        </div>
+        
+        <div class="status" id="status">Ready to test...</div>
+        
+        <div class="log" id="log"></div>
+    </div>
+
+    <!-- Load the libraries -->
+    <script src="lib/coordinate-mapper.js"></script>
+    <script src="lib/svg-interactive.js"></script>
+    
+    <script>
+        const logElement = document.getElementById('log');
+        const statusElement = document.getElementById('status');
+        const chartContainer = document.getElementById('chart-container');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? 'red' : type === 'success' ? 'green' : 'blue';
+            logElement.innerHTML += `<span style="color: ${color}">[${timestamp}] ${message}</span><br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            logElement.innerHTML = '';
+            log('Log cleared');
+        }
+        
+        async function testLineChart() {
+            try {
+                log('🔍 Loading line chart SVG...');
+                statusElement.textContent = 'Loading line chart...';
+                
+                // Fetch the line chart
+                const response = await fetch('examples/line-chart.svg');
+                const svgText = await response.text();
+                
+                chartContainer.innerHTML = svgText;
+                log('✅ SVG loaded successfully');
+                
+                // Get the SVG element
+                const svg = chartContainer.querySelector('svg');
+                if (!svg) {
+                    throw new Error('SVG element not found');
+                }
+                
+                log('🔍 Analyzing SVG elements...');
+                
+                // Count different element types
+                const circles = svg.querySelectorAll('circle');
+                const rects = svg.querySelectorAll('rect');
+                const paths = svg.querySelectorAll('path');
+                const polylines = svg.querySelectorAll('polyline');
+                
+                log(`📊 Element counts: ${circles.length} circles, ${rects.length} rects, ${paths.length} paths, ${polylines.length} polylines`);
+                
+                // Analyze polylines specifically
+                let gridPolylines = 0;
+                let dataPolylines = 0;
+                
+                polylines.forEach((polyline, index) => {
+                    const stroke = window.getComputedStyle(polyline).stroke;
+                    const dataId = polyline.getAttribute('data-id');
+                    const title = polyline.getAttribute('title');
+                    const points = polyline.getAttribute('points');
+                    
+                    if (stroke.includes('#EBEBEB') || stroke.includes('#ebebeb') || stroke.includes('#b0b0b0')) {
+                        gridPolylines++;
+                        log(`  Grid polyline ${index}: stroke=${stroke}`);
+                    } else {
+                        dataPolylines++;
+                        log(`  Data polyline ${index}: stroke=${stroke}, data-id=${dataId}, title=${title}`);
+                    }
+                });
+                
+                log(`📈 Polyline analysis: ${gridPolylines} grid lines, ${dataPolylines} data series`);
+                
+                // Initialize interactive features
+                log('🚀 Initializing SVG Interactive...');
+                
+                const interactive = new SVGInteractive(svg, {
+                    tooltipStyle: 'enhanced',
+                    enableDetailOnDemand: true,
+                    onSelect: (selectedData, point) => {
+                        log(`✅ Selected: ${point.type} #${point.id} (${point.dataX.toFixed(2)}, ${point.dataY.toFixed(2)})`);
+                    },
+                    onHover: (point, action) => {
+                        if (action === 'enter') {
+                            log(`👆 Hovering: ${point.type} #${point.id}`);
+                        }
+                    }
+                });
+                
+                const dataPoints = interactive.getDataPoints();
+                const interactiveCount = dataPoints.length;
+                
+                log(`🎯 Interactive elements created: ${interactiveCount}`);
+                
+                // Analyze interactive elements by type
+                const elementTypes = {};
+                dataPoints.forEach(point => {
+                    elementTypes[point.type] = (elementTypes[point.type] || 0) + 1;
+                });
+                
+                log('📊 Interactive element breakdown:');
+                Object.entries(elementTypes).forEach(([type, count]) => {
+                    log(`  ${type}: ${count} elements`);
+                });
+                
+                // Test coordinate mapping
+                const coordinateInfo = interactive.coordinateMapper.getDebugInfo();
+                log(`🗺️ Coordinate mapping: X-ticks=${coordinateInfo.xAxisTicks.length}, Y-ticks=${coordinateInfo.yAxisTicks.length}`);
+                
+                if (interactiveCount > 0) {
+                    statusElement.textContent = `✅ Success: ${interactiveCount} interactive elements detected!`;
+                    statusElement.className = 'status success';
+                    log(`✅ TEST PASSED: Line chart polylines are now interactive!`, 'success');
+                    
+                    // Test tooltip on first polyline
+                    const firstPolyline = dataPoints.find(p => p.type === 'polyline');
+                    if (firstPolyline) {
+                        log(`🔍 Testing tooltip for polyline: ${firstPolyline.pointCount} points from (${firstPolyline.startPoint.x}, ${firstPolyline.startPoint.y}) to (${firstPolyline.endPoint.x}, ${firstPolyline.endPoint.y})`);
+                    }
+                } else {
+                    statusElement.textContent = '❌ No interactive elements detected';
+                    statusElement.className = 'status error';
+                    log('❌ TEST FAILED: No interactive elements found', 'error');
+                }
+                
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                statusElement.textContent = `Error: ${error.message}`;
+                statusElement.className = 'status error';
+            }
+        }
+        
+        // Initialize
+        log('🎯 Polyline support test ready');
+    </script>
+</body>
+</html>

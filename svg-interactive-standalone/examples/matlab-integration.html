@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>MATLAB Integration Example</title>
+    <script src="../lib/coordinate-mapper.js"></script>
+    <script src="../lib/svg-interactive.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        #chart-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        #status {
+            padding: 10px;
+            background: #e3f2fd;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .info {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .info h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .info pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>MATLAB Integration Example</h1>
+    
+    <div id="status">Ready for MATLAB integration...</div>
+    
+    <div id="chart-container">
+        <p>Waiting for SVG content from MATLAB...</p>
+    </div>
+    
+    <div class="info">
+        <h3>MATLAB Code Example</h3>
+        <pre><code>% Create HTML UI component
+htmlComponent = uihtml(figure, 'HTMLSource', 'matlab-integration.html');
+
+% Read SVG file
+svgContent = fileread('your-chart.svg');
+
+% Load SVG into the interactive component
+svgContentEscaped = strrep(svgContent, '`', '\`');
+jsCode = sprintf('loadSVG(`%s`)', svgContentEscaped);
+executejs(htmlComponent, jsCode);
+
+% Set up callback for receiving selection data
+htmlComponent.HTMLEventReceivedFcn = @(src, event) handleSelectionCallback(event);
+
+function handleSelectionCallback(event)
+    if strcmp(event.HTMLEventName, 'selection')
+        selectedData = jsondecode(event.HTMLEventData);
+        fprintf('Selected %d points\n', length(selectedData));
+        
+        % Extract coordinates
+        xCoords = [selectedData.dataX];
+        yCoords = [selectedData.dataY];
+        
+        % Process the data in MATLAB
+        disp('Selected coordinates:');
+        disp(table(xCoords', yCoords', 'VariableNames', {'X', 'Y'}));
+    end
+end</code></pre>
+
+        <h3>Available JavaScript Functions</h3>
+        <ul>
+            <li><code>loadSVG(svgString)</code> - Load SVG content and make it interactive</li>
+            <li><code>getSelectionData()</code> - Get current selection as JSON</li>
+            <li><code>clearSelection()</code> - Clear all selections</li>
+            <li><code>selectPoints(pointIds)</code> - Programmatically select points</li>
+        </ul>
+    </div>
+
+    <script>
+        let interactiveInstance = null;
+        
+        // Function to be called from MATLAB
+        function loadSVG(svgContent) {
+            const container = document.getElementById('chart-container');
+            const status = document.getElementById('status');
+            
+            try {
+                container.innerHTML = svgContent;
+                
+                const svg = container.querySelector('svg');
+                if (!svg) {
+                    throw new Error('No SVG element found in content');
+                }
+                
+                // Create interactive instance
+                interactiveInstance = new SVGInteractive(svg, {
+                    onSelect: (selectedData, point) => {
+                        // Send selection data back to MATLAB
+                        const selectionInfo = {
+                            point: point,
+                            allSelected: selectedData,
+                            count: selectedData.length
+                        };
+                        
+                        // Trigger MATLAB callback
+                        if (window.matlabCallback) {
+                            window.matlabCallback('selection', JSON.stringify(selectionInfo));
+                        }
+                        
+                        // For testing purposes, log to console
+                        console.log('Selection changed:', selectionInfo);
+                        
+                        // Update status
+                        status.textContent = `Interactive chart loaded. ${selectedData.length} points selected.`;
+                    },
+                    
+                    tooltipFormat: (point) => `
+                        <strong>Point ${point.id}</strong><br>
+                        X: ${point.dataX.toFixed(3)}<br>
+                        Y: ${point.dataY.toFixed(3)}
+                    `
+                });
+                
+                const pointCount = interactiveInstance.getDataPoints().length;
+                status.textContent = `Interactive chart loaded with ${pointCount} data points. Click points to select them.`;
+                
+                console.log(`SVG loaded successfully with ${pointCount} interactive points`);
+                
+            } catch (error) {
+                status.textContent = `Error loading SVG: ${error.message}`;
+                console.error('Error loading SVG:', error);
+            }
+        }
+        
+        // Function to get current selection data for MATLAB
+        function getSelectionData() {
+            if (!interactiveInstance) {
+                return JSON.stringify({ error: 'No interactive instance loaded' });
+            }
+            
+            return JSON.stringify(interactiveInstance.exportData());
+        }
+        
+        // Function to clear selection from MATLAB
+        function clearSelection() {
+            if (interactiveInstance) {
+                interactiveInstance.clearSelection();
+                document.getElementById('status').textContent = 'Selection cleared.';
+                return true;
+            }
+            return false;
+        }
+        
+        // Function to select points programmatically from MATLAB
+        function selectPoints(pointIds) {
+            if (interactiveInstance) {
+                // Parse point IDs if they come as a string
+                const ids = typeof pointIds === 'string' ? JSON.parse(pointIds) : pointIds;
+                interactiveInstance.selectPoints(ids);
+                
+                const selected = interactiveInstance.getSelectedData();
+                document.getElementById('status').textContent = `${selected.length} points selected programmatically.`;
+                return true;
+            }
+            return false;
+        }
+        
+        // Demo function - load sample SVG for testing
+        function loadSampleSVG() {
+            fetch('r4-1.svg')
+                .then(response => response.text())
+                .then(svgContent => {
+                    loadSVG(svgContent);
+                })
+                .catch(error => {
+                    console.error('Error loading sample SVG:', error);
+                    document.getElementById('status').textContent = 'Error loading sample SVG. Make sure r4-1.svg is available.';
+                });
+        }
+        
+        // For demo purposes, load sample SVG after 1 second
+        setTimeout(loadSampleSVG, 1000);
+    </script>
+</body>
+</html>
